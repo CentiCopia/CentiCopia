@@ -1,0 +1,34 @@
+# CentiCopia - Project Tasks
+
+[run]
+command=npm run dev
+cwd=$(VIM_ROOT)
+output=terminal
+pos=TAB
+save=1
+
+[typecheck]
+command=npm run typecheck
+cwd=$(VIM_ROOT)
+output=terminal
+pos=bottom
+save=1
+
+[build]
+command=npm run build
+cwd=$(VIM_ROOT)
+output=terminal
+pos=bottom
+save=1
+
+[preview]
+command=npm run preview
+cwd=$(VIM_ROOT)
+output=terminal
+pos=TAB
+
+[install]
+command=npm install
+cwd=$(VIM_ROOT)
+output=terminal
+pos=bottom
