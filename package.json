@@ -20,7 +20,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/CentiCopia/CentiCopia/issues"
   },
@@ -29,5 +29,8 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.4"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@sqlite.org/sqlite-wasm": "^3.54.1-build1"
+  }
 }

@@ -1,25 +1,59 @@
 import './styles/main.css';
 
-function initializeApp(): void {
-    const app: HTMLDivElement | null =
-        document.querySelector<HTMLDivElement>('#app');
+type DatabaseResponse =
+  | {
+    type: 'ready';
+    version: string;
+    count: number;
+  }
+  | {
+    type: 'error';
+    message: string;
+  };
 
-    if (app === null) {
-        throw new Error('Application root not found.');
+function initializeApp(): void {
+  const app: HTMLDivElement | null =
+    document.querySelector<HTMLDivElement>('#app');
+
+  if (app === null) {
+    throw new Error('Application root not found.');
+  }
+
+  const heading: HTMLHeadingElement =
+    document.createElement('h1');
+
+  heading.textContent = 'CentiCopia';
+
+  const status: HTMLParagraphElement = document.createElement('p');
+  status.textContent = 'Initializing database...';
+
+  app.replaceChildren(heading, status)
+
+  const worker: Worker = new Worker(
+    new URL('./db/sqlite.worker.ts', import.meta.url),
+    { type: 'module' }
+  );
+
+  worker.onmessage = (event: MessageEvent<DatabaseResponse>): void => {
+    const response: DatabaseResponse = event.data
+
+    if (response.type === 'error') {
+      status.textContent =
+        `Database error: ${response.message}`;
+    } else {
+      status.textContent =
+        `SQLite ${response.version} initialized. ` +
+        `Startup count: ${response.count}`;
     }
 
-    const heading: HTMLHeadingElement =
-        document.createElement('h1');
+    worker.terminate();
+  };
 
-    heading.textContent = 'CentiCopia';
+  worker.onerror = (event: ErrorEvent): void => {
+    status.textContent = `Database worker error: ${event.message}`
 
-    const description: HTMLParagraphElement =
-        document.createElement('p');
-
-    description.textContent =
-        'Your finances. Your data. Your control.';
-
-    app.append(heading, description);
+    worker.terminate()
+  };
 }
 
 initializeApp();
