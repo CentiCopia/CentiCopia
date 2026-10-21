@@ -1,9 +1,13 @@
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+import schemaV1 from '../../database/schema.sql?raw';
+import { migrate } from '../../database/migrate'
 
 type DatabaseReady = {
   type: 'ready';
   version: string;
-  count: number;
+  schemaVersion: number;
+  accountCount: number;
+  defaultBudget: string;
 };
 
 type DatabaseError = {
@@ -39,33 +43,31 @@ async function initializeDatabase(): Promise<void> {
   const db = new sqlite3.oo1.OpfsDb('/centicopia.sqlite3');
 
   try {
-    db.exec(`
-            CREATE TABLE IF NOT EXISTS _startup_test (
-                id INTEGER PRIMARY KEY CHECK (id = 1),
-                count INTEGER NOT NULL DEFAULT 0
-            );
-        `);
+    migrate(db, [schemaV1]);
 
-    db.exec(`
-            INSERT INTO _startup_test (id, count)
-            VALUES (1, 1)
-            ON CONFLICT(id)
-            DO UPDATE SET count = count + 1;
-        `);
+    db.exec('DROP TABLE IF EXISTS _startup_test')
 
-    const count: number = Number(
+    const schemaVersion: number = Number(
+      db.selectValue('PRAGMA user_version')
+    );
+
+    const accountCount: number = Number(
+      db.selectValue('SELECT COUNT(*) FROM accounts')
+    );
+
+    const defaultBudget: string = String(
       db.selectValue(
-        'SELECT count FROM _startup_test WHERE id = 1'
+        'SELECT name FROM budgets WHERE is_default = 1'
       )
     );
 
-    const response: DatabaseResponse = {
+    self.postMessage({
       type: 'ready',
       version: sqlite3.version.libVersion,
-      count,
-    };
-
-    self.postMessage(response);
+      schemaVersion,
+      accountCount,
+      defaultBudget,
+    });
   } finally {
     db.close();
   }

@@ -4,7 +4,9 @@ type DatabaseResponse =
   | {
     type: 'ready';
     version: string;
-    count: number;
+    schemaVersion: number;
+    accountCount: number;
+    defaultBudget: string;
   }
   | {
     type: 'error';
@@ -42,8 +44,10 @@ function initializeApp(): void {
         `Database error: ${response.message}`;
     } else {
       status.textContent =
-        `SQLite ${response.version} initialized. ` +
-        `Startup count: ${response.count}`;
+        `SQLite ${response.version} initialized.\n` +
+        `Schema version: ${response.schemaVersion}\n` +
+        `Accounts: ${response.accountCount}\n` +
+        `Default budget: ${response.defaultBudget}`;
     }
 
     worker.terminate();
