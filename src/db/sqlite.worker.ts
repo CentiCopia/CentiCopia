@@ -1,21 +1,53 @@
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+
 import schemaV1 from '../../database/schema.sql?raw';
 import { migrate } from '../../database/migrate'
 
-type DatabaseReady = {
-  type: 'ready';
-  version: string;
-  schemaVersion: number;
-  accountCount: number;
-  defaultBudget: string;
-};
+import type {
+  DatabaseRequest,
+  DatabaseResponse,
+} from './protocol';
 
-type DatabaseError = {
-  type: 'error';
-  message: string;
-};
+import type {
+  Account,
+  AccountSubtype,
+  AccountType,
+  CreateAccountInput,
+} from './types'
 
-type DatabaseResponse = DatabaseReady | DatabaseError;
+interface AccountRow {
+  id: string;
+  name: string;
+  type: AccountType;
+  subtype: string;
+  is_hidden: number;
+  is_archived: number;
+  created_at: string;
+}
+
+function mapAccount(row: AccountRow): Account {
+  return {
+    id: row.id,
+    name: row.type,
+    type: row.type,
+    subtype: row.subtype,
+    isHidden: row.is_hidden === 1,
+    isArchived: row.is_archived === 1,
+    createdAt: row.created_at,
+  };
+}
+
+function getAccountType(subtype: AccountSubtype): AccountType {
+  switch (subtype) {
+    case 'credit_card':
+    case 'loan':
+      return 'liability';
+
+    default:
+      return 'asset'
+  }
+}
+
 
 async function initializeDatabase(): Promise<void> {
   if (!self.crossOriginIsolated) {
@@ -24,17 +56,9 @@ async function initializeDatabase(): Promise<void> {
 
   const sqlite3 = await sqlite3InitModule();
 
-  console.log('SQLite initialized:', sqlite3.version.libVersion);
-
-  console.log('OPFS diagnostics:', {
-    opfsAvailable: 'opfs' in sqlite3,
-    opfsDatabaseAvailable: typeof sqlite3.oo1.OpfsDb,
-  });
 
   const opfsAvailable: boolean =
     Boolean(sqlite3.capi.sqlite3_vfs_find('opfs'));
-
-  console.log('OPFS VFS registered:', opfsAvailable);
 
   if (!opfsAvailable) {
     throw new Error('SQLite OPFS VFS failed to initialize.');
@@ -45,37 +69,119 @@ async function initializeDatabase(): Promise<void> {
   try {
     migrate(db, [schemaV1]);
 
-    db.exec('DROP TABLE IF EXISTS _startup_test')
-
     const schemaVersion: number = Number(
       db.selectValue('PRAGMA user_version')
     );
 
-    const accountCount: number = Number(
-      db.selectValue('SELECT COUNT(*) FROM accounts')
-    );
+    // Register requests only after the database is ready.
+    self.onmessage = (
+      event: MessageEvent<DatabaseRequest>
+    ): void => {
+      const request = event.data
 
-    const defaultBudget: string = String(
-      db.selectValue(
-        'SELECT name FROM budgets WHERE is_default = 1'
-      )
-    );
+      try {
+        switch (request.type) {
+          case 'getAccounts': {
+            // TODO: replace this double assertion with proper type checking.
+            const rows = db.selectObjects(`
+              SELECT
+                id, name, type, subtype, is_hidden, is_archived, created_at
+              FROM accounts
+              WHERE is_hidden = 0
+              ORDER BY name
+            `) as unknown as AccountRow[];
 
-    self.postMessage({
+
+            const response: DatabaseResponse = {
+              id: request.id,
+              type: 'accounts',
+              accounts: rows.map(mapAccount)
+            };
+
+            self.postMessage(response)
+            break;
+          }
+
+          case 'createAccount': {
+            const input: CreateAccountInput = request.input;
+
+            const name = input.name.trim()
+
+            if (name.length === 0 || name.length > 100) {
+              throw new Error('Account name must be 1-100 characters.');
+            }
+
+            const allowedSubtypes: AccountSubtype[] = [
+              'checking', 'savings', 'cash', 'gift_card', 'credit_card', 'loan', 'other',
+            ];
+
+            if (!allowedSubtypes.includes(input.subtype)) {
+              throw new Error('Invalid account subtype.');
+            }
+
+            const id = crypto.randomUUID()
+            const type = getAccountType(input.subtype)
+
+            db.exec({
+              sql: `
+                INSERT INTO accounts
+                  (id, name, type, subtype)
+                VALUES (?, ?, ?, ?)
+              `,
+              bind: [id, name, type, input.subtype],
+            })
+
+            const row = db.selectObject(
+              `SELECT
+                id, name, type, subtype, is_hidden, is_archived, created_at
+              FROM accounst WHERE id = ?`, [id]
+            ) as AccountRow | undefined
+
+            if (row === undefined) {
+              throw new Error('Account creation failed.')
+            }
+
+            const response: DatabaseResponse = {
+              id: request.id,
+              type: 'accountCreated',
+              account: mapAccount(row)
+            }
+
+            self.postMessage(response)
+            break;
+          }
+        }
+      }
+      catch (error: unknown) {
+        const response: DatabaseResponse = {
+          id: request.id,
+          type: 'error',
+          message: error instanceof Error
+            ? error.message
+            : String(error),
+        };
+        self.postMessage(response)
+      }
+    }
+
+    const ready: DatabaseResponse = {
       type: 'ready',
-      version: sqlite3.version.libVersion,
+      sqliteVersion: sqlite3.version.libVersion,
       schemaVersion,
-      accountCount,
-      defaultBudget,
-    });
-  } finally {
+    }
+
+    self.postMessage(ready)
+
+    // Keep the database open for future requests.
+  } catch (error) {
     db.close();
+    throw error;
   }
 }
 
 void initializeDatabase().catch((error: unknown): void => {
   const response: DatabaseResponse = {
-    type: 'error',
+    type: 'fatal',
     message: error instanceof Error
       ? error.message
       : String(error),
