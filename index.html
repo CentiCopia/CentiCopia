@@ -1,14 +1,75 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#ffffff" />
-    <title>CentiCopia</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>CentiCopia</title>
+</head>
+
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div>
+        <h1>CentiCopia</h1>
+        <p>Your finances. Your data. Your control.</p>
+      </div>
+      <span class="storage-badge">Local Database</span>
+    </header>
+
+    <main class="dashboard">
+      <section class="panel" aria-labelledby="add-title">
+        <h2 id="add-title">Add Account</h2>
+
+        <form id="account-form">
+          <label for="account-name">
+            Account Name
+          </label>
+          <input id="account-name" name="name" type="text" maxlength="100" placeholder="e.g. Main Checking"
+            autocomplete="off" required />
+
+          <label for="account-type">
+            Account Type
+          </label>
+          <select id="account-type" name="type">
+            <option value="checking">Checking</option>
+            <option value="savings">Savings</option>
+            <option value="cash">Cash</option>
+            <option value="gift_card">Gift Card</option>
+            <option value="credit_card">Credit Card</option>
+            <option value="loan">Loan</option>
+            <option value="other">Other</option>
+          </select>
+
+          <button id="add-button" type="submit" disabled>
+            Add Account
+          </button>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="accounts-title">
+        <div class="section-heading">
+          <h2 id="accounts-title">Accounts</h2>
+          <button id="refresh-button" type="button" class="secondary-button" disabled>
+            Refresh
+          </button>
+        </div>
+
+        <p id="account-count">Loading accounts...</p>
+        <ul id="account-list" class="account-list"></ul>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p id="status" role="status" aria-live="polite">
+        Initializing database...
+      </p>
+      <small id="database-info"></small>
+    </footer>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>

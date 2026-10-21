@@ -4,7 +4,12 @@
 command=npm run dev
 cwd=$(VIM_ROOT)
 output=terminal
-pos=TAB
+save=1
+
+[reset]
+command=reset.bat
+cwd=$(VIM_ROOT)
+output=terminal
 save=1
 
 [typecheck]

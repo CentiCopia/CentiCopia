@@ -64,7 +64,21 @@ async function initializeDatabase(): Promise<void> {
     throw new Error('SQLite OPFS VFS failed to initialize.');
   }
 
-  const db = new sqlite3.oo1.OpfsDb('/centicopia.sqlite3');
+  const resetDatabase: boolean =
+    import.meta.env.DEV &&
+    import.meta.env.VITE_RESET_DATABASE === 'true';
+
+  if (resetDatabase) {
+    console.log('Reseting the database')
+  } else {
+    console.log('Not resetting the database')
+  }
+
+  const databasePath: string = resetDatabase
+    ? 'file:/centicopia.sqlite3?delete-before-open=1'
+    : '/centicopia.sqlite3';
+
+  const db = new sqlite3.oo1.OpfsDb(databasePath);
 
   try {
     migrate(db, [schemaV1]);
@@ -134,7 +148,7 @@ async function initializeDatabase(): Promise<void> {
             const row = db.selectObject(
               `SELECT
                 id, name, type, subtype, is_hidden, is_archived, created_at
-              FROM accounst WHERE id = ?`, [id]
+              FROM accounts WHERE id = ?`, [id]
             ) as AccountRow | undefined
 
             if (row === undefined) {
