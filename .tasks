@@ -4,6 +4,20 @@
 command=npm run dev
 cwd=$(VIM_ROOT)
 output=terminal
+pos=TAB
+save=1
+
+[test]
+command=npm test
+cwd=$(VIM_ROOT)
+output=terminal
+save=1
+
+[test-watch]
+command=npm run test:watch
+cwd=$(VIM_ROOT)
+output=terminal
+pos=TAB
 save=1
 
 [reset]

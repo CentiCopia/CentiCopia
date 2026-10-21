@@ -15,27 +15,9 @@ import type {
   CreateAccountInput,
 } from './types'
 
-interface AccountRow {
-  id: string;
-  name: string;
-  type: AccountType;
-  subtype: string;
-  is_hidden: number;
-  is_archived: number;
-  created_at: string;
-}
+import { mapAccount } from './account.mapper';
+import type { AccountRow } from './account.mapper';
 
-function mapAccount(row: AccountRow): Account {
-  return {
-    id: row.id,
-    name: row.type,
-    type: row.type,
-    subtype: row.subtype,
-    isHidden: row.is_hidden === 1,
-    isArchived: row.is_archived === 1,
-    createdAt: row.created_at,
-  };
-}
 
 function getAccountType(subtype: AccountSubtype): AccountType {
   switch (subtype) {
@@ -136,13 +118,25 @@ async function initializeDatabase(): Promise<void> {
             const id = crypto.randomUUID()
             const type = getAccountType(input.subtype)
 
+            console.log('Creating account:', {
+              id,
+              name,
+              type,
+              subtype: input.subtype,
+            });
+
             db.exec({
               sql: `
                 INSERT INTO accounts
                   (id, name, type, subtype)
-                VALUES (?, ?, ?, ?)
+                VALUES ($id, $name, $type, $subtype)
               `,
-              bind: [id, name, type, input.subtype],
+              bind: {
+                $id: id,
+                $name: name,
+                $type: type,
+                $subtype: input.subtype,
+              },
             })
 
             const row = db.selectObject(
@@ -150,6 +144,9 @@ async function initializeDatabase(): Promise<void> {
                 id, name, type, subtype, is_hidden, is_archived, created_at
               FROM accounts WHERE id = ?`, [id]
             ) as AccountRow | undefined
+
+            console.log('Raw SQLite row:', row);
+            console.log('Mapped account:', row ? mapAccount(row) : undefined);
 
             if (row === undefined) {
               throw new Error('Account creation failed.')
