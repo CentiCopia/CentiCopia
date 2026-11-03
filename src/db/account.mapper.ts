@@ -21,3 +21,24 @@ export function mapAccount(row: AccountRow): Account {
     createdAt: row.created_at,
   };
 }
+
+const accountTypes: readonly string[] = [
+  'asset', 'liability', 'income', 'expense', 'equity',
+];
+
+export function isAccountRow(value: unknown): value is AccountRow {
+  if (typeof value != 'object' || value === null) return false;
+
+  const row = value as Record<string, unknown>;
+
+  return (
+  typeof row.id === 'string' &&
+      typeof row.name === 'string' &&
+      typeof row.type === 'string' &&
+      accountTypes.includes(row.type) &&
+      typeof row.subtype === 'string' &&
+      typeof row.is_hidden === 'number' &&
+      typeof row.is_archived === 'number' &&
+      typeof row.created_at === 'string'
+  );
+}

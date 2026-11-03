@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { mapAccount } from '../src/db/account.mapper';
+import { mapAccount, isAccountRow } from '../src/db/account.mapper';
 import type { AccountRow } from '../src/db/account.mapper';
 import type { Account } from '../src/db/types';
 
@@ -66,4 +66,96 @@ describe('mapAccount()', (): void => {
     expect(result.isHidden).toBe(true);
     expect(result.isArchived).toBe(true);
   });
+
 });
+
+describe('isAccountRow()', (): void => {
+  it('detects null rows', (): void => {
+    // Arrange
+    const row = null;
+
+    // Act
+    const result: bool = isAccountRow(row);
+
+    // Assert
+    expect(result).toBe(false)
+  });
+
+  it('detects missing name', (): void => {
+    // Arrange
+    const row = {
+      id: 'account-003',
+      type: 'asset',
+      subtype: 'savings',
+      is_hidden: 1,
+      is_archived: 1,
+      created_at: '2026-10-21 10:00:00',
+    }
+
+    // Act
+    const result: bool = isAccountRow(row);
+
+    // Assert
+    expect(result).toBe(false)
+  });
+
+  it('detects bogus account type', (): void => {
+
+    // Arrange
+    const row = {
+      id: 'account-003',
+      name: 'Archived Savings',
+      type: 'bogus',
+      subtype: 'savings',
+      is_hidden: 1,
+      is_archived: 1,
+      created_at: '2026-10-21 10:00:00',
+    };
+
+    // Act
+    const result: bool = isAccountRow(row);
+
+    // Assert
+    expect(result).toBe(false)
+  })
+
+  it('detects invalid types', (): void => {
+    // Arrange
+    const row: AccountRow = {
+      id: 'account-003',
+      name: 'Archived Savings',
+      type: 'asset',
+      subtype: 'savings',
+      is_hidden: '1',
+      is_archived: 1,
+      created_at: '2026-10-21 10:00:00',
+    };
+
+    // Act
+    const result: bool = isAccountRow(row);
+
+    // Assert
+    expect(result).toBe(false)
+  })
+
+  it('detects a valid row', (): void => {
+
+    // Arrange
+    const row: AccountRow = {
+      id: 'account-001',
+      name: 'Main Checking',
+      type: 'asset',
+      subtype: 'checking',
+      is_hidden: 0,
+      is_archived: 0,
+      created_at: '2026-10-21 10:00:00',
+    };
+
+    // Act
+    const result: bool = isAccountRow(row);
+
+    // Assert
+    expect(result).toBe(true)
+
+  })
+})
