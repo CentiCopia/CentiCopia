@@ -50,11 +50,6 @@ async function initializeDatabase(): Promise<void> {
     import.meta.env.DEV &&
     import.meta.env.VITE_RESET_DATABASE === 'true';
 
-  if (resetDatabase) {
-    console.log('Reseting the database')
-  } else {
-    console.log('Not resetting the database')
-  }
 
   const databasePath: string = resetDatabase
     ? 'file:/centicopia.sqlite3?delete-before-open=1'
@@ -118,13 +113,6 @@ async function initializeDatabase(): Promise<void> {
             const id = crypto.randomUUID()
             const type = getAccountType(input.subtype)
 
-            console.log('Creating account:', {
-              id,
-              name,
-              type,
-              subtype: input.subtype,
-            });
-
             db.exec({
               sql: `
                 INSERT INTO accounts
@@ -144,9 +132,6 @@ async function initializeDatabase(): Promise<void> {
                 id, name, type, subtype, is_hidden, is_archived, created_at
               FROM accounts WHERE id = ?`, [id]
             ) as AccountRow | undefined
-
-            console.log('Raw SQLite row:', row);
-            console.log('Mapped account:', row ? mapAccount(row) : undefined);
 
             if (row === undefined) {
               throw new Error('Account creation failed.')
