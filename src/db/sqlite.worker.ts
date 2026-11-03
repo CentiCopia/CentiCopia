@@ -15,7 +15,7 @@ import type {
   CreateAccountInput,
 } from './types'
 
-import { mapAccount } from './account.mapper';
+import { mapAccount, isAccountRow } from './account.mapper';
 import type { AccountRow } from './account.mapper';
 
 
@@ -73,20 +73,26 @@ async function initializeDatabase(): Promise<void> {
       try {
         switch (request.type) {
           case 'getAccounts': {
-            // TODO: replace this double assertion with proper type checking.
-            const rows = db.selectObjects(`
+            const rows: unknown[] = db.selectObjects(`
               SELECT
                 id, name, type, subtype, is_hidden, is_archived, created_at
               FROM accounts
               WHERE is_hidden = 0
               ORDER BY name
-            `) as unknown as AccountRow[];
+            `);
+
+            const accounts: Account[] = rows.map((row: unknown): Account => {
+              if (!isAccountRow(row)) {
+                throw new Error('Unexpected account row shape.');
+              }
+              return mapAccount(row)
+            });
 
 
             const response: DatabaseResponse = {
               id: request.id,
               type: 'accounts',
-              accounts: rows.map(mapAccount)
+              accounts,
             };
 
             self.postMessage(response)
@@ -127,13 +133,13 @@ async function initializeDatabase(): Promise<void> {
               },
             })
 
-            const row = db.selectObject(
+            const row: unknown = db.selectObject(
               `SELECT
                 id, name, type, subtype, is_hidden, is_archived, created_at
               FROM accounts WHERE id = ?`, [id]
-            ) as AccountRow | undefined
+            )
 
-            if (row === undefined) {
+            if (!isAccountRow(row)) {
               throw new Error('Account creation failed.')
             }
 

@@ -75,7 +75,7 @@ describe('isAccountRow()', (): void => {
     const row = null;
 
     // Act
-    const result: bool = isAccountRow(row);
+    const result: boolean = isAccountRow(row);
 
     // Assert
     expect(result).toBe(false)
@@ -93,7 +93,7 @@ describe('isAccountRow()', (): void => {
     }
 
     // Act
-    const result: bool = isAccountRow(row);
+    const result: boolean = isAccountRow(row);
 
     // Assert
     expect(result).toBe(false)
@@ -113,7 +113,7 @@ describe('isAccountRow()', (): void => {
     };
 
     // Act
-    const result: bool = isAccountRow(row);
+    const result: boolean = isAccountRow(row);
 
     // Assert
     expect(result).toBe(false)
@@ -121,7 +121,7 @@ describe('isAccountRow()', (): void => {
 
   it('detects invalid types', (): void => {
     // Arrange
-    const row: AccountRow = {
+    const row: unknown = {
       id: 'account-003',
       name: 'Archived Savings',
       type: 'asset',
@@ -132,7 +132,7 @@ describe('isAccountRow()', (): void => {
     };
 
     // Act
-    const result: bool = isAccountRow(row);
+    const result: boolean = isAccountRow(row);
 
     // Assert
     expect(result).toBe(false)
@@ -141,7 +141,7 @@ describe('isAccountRow()', (): void => {
   it('detects a valid row', (): void => {
 
     // Arrange
-    const row: AccountRow = {
+    const row: unknown = {
       id: 'account-001',
       name: 'Main Checking',
       type: 'asset',
@@ -152,7 +152,7 @@ describe('isAccountRow()', (): void => {
     };
 
     // Act
-    const result: bool = isAccountRow(row);
+    const result: boolean = isAccountRow(row);
 
     // Assert
     expect(result).toBe(true)
