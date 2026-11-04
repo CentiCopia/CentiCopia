@@ -5,6 +5,7 @@ export interface AccountRow {
   name: string;
   type: AccountType;
   subtype: string;
+  opening_date: string | null;
   is_hidden: number;
   is_archived: number;
   created_at: string;
@@ -16,6 +17,7 @@ export function mapAccount(row: AccountRow): Account {
     name: row.name,
     type: row.type,
     subtype: row.subtype,
+    openingDate: row.opening_date,
     isHidden: row.is_hidden === 1,
     isArchived: row.is_archived === 1,
     createdAt: row.created_at,
@@ -37,6 +39,7 @@ export function isAccountRow(value: unknown): value is AccountRow {
       typeof row.type === 'string' &&
       accountTypes.includes(row.type) &&
       typeof row.subtype === 'string' &&
+      (row.opening_date === null || typeof row.opening_date === 'string') &&
       typeof row.is_hidden === 'number' &&
       typeof row.is_archived === 'number' &&
       typeof row.created_at === 'string'

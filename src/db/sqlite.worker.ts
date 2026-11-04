@@ -75,7 +75,7 @@ async function initializeDatabase(): Promise<void> {
           case 'getAccounts': {
             const rows: unknown[] = db.selectObjects(`
               SELECT
-                id, name, type, subtype, is_hidden, is_archived, created_at
+                id, name, type, subtype, opening_date, is_hidden, is_archived, created_at
               FROM accounts
               WHERE is_hidden = 0
                 AND type IN ('asset', 'liability')
@@ -136,7 +136,7 @@ async function initializeDatabase(): Promise<void> {
 
             const row: unknown = db.selectObject(
               `SELECT
-                id, name, type, subtype, is_hidden, is_archived, created_at
+                id, name, type, subtype, opening_date, is_hidden, is_archived, created_at
               FROM accounts WHERE id = ?`, [id]
             )
 

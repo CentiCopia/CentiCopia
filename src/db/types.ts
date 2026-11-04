@@ -19,6 +19,7 @@ export interface Account {
   name: string;
   type: AccountType;
   subtype: string;
+  openingDate: string | null;
   isHidden: boolean;
   isArchived: boolean;
   createdAt: string;
