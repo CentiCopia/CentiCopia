@@ -16,15 +16,15 @@ choose how and where your data is backed up or shared between your devices.
 CentiCopia is built around a few straightforward principles:
 
 - **Free forever:** Core functionality will remain free to use, with donations
-encouraged but never required.
+  encouraged but never required.
 - **Open source:** Anyone can inspect the code, contribute improvements, and
-build on the project according to its license.
+  build on the project according to its license.
 - **Local-first:** Your financial data is stored in a local SQLite database
-rather than requiring a hosted account.
+  rather than requiring a hosted account.
 - **Your data, your choice:** Optional cloud synchronization will let users
-choose supported providers.
+  choose supported providers.
 - **Simple by design:** Managing everyday finances should be intuitive, without
-requiring training or complicated financial terminology.
+  requiring training or complicated financial terminology.
 - **No arbitrary account limits:** Create as many accounts as you need.
 - **Privacy matters:** Financial information should remain under the user's control.
 

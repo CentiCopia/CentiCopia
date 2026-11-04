@@ -170,6 +170,17 @@ button:disabled {
   padding: 0;
 }
 
+.net-worth {
+  margin: 0.5rem 0 0;
+  font-weight: 600;
+}
+
+.account-balance {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
 .account-item {
   display: flex;
   justify-content: space-between;

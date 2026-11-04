@@ -1,15 +1,9 @@
-import type {
-  DatabaseCommand,
-  DatabaseResponse,
-} from './protocol';
+import type { DatabaseCommand, DatabaseResponse } from "./protocol";
 
-import type {
-  Account,
-  CreateAccountInput,
-} from './types';
+import type { Account, CreateAccountInput } from "./types";
 
 type Result = Extract<DatabaseResponse, { id: number }>;
-type Ready = Extract<DatabaseResponse, { type: 'ready' }>;
+type Ready = Extract<DatabaseResponse, { type: "ready" }>;
 
 export class DatabaseClient {
   private readonly worker: Worker;
@@ -26,23 +20,20 @@ export class DatabaseClient {
   public readonly ready: Promise<Ready>;
 
   public constructor() {
-    this.worker = new Worker(
-      new URL('./sqlite.worker.ts', import.meta.url),
-      { type: 'module' }
-    );
+    this.worker = new Worker(new URL("./sqlite.worker.ts", import.meta.url), {
+      type: "module",
+    });
 
     this.ready = new Promise<Ready>((resolve, reject) => {
-      this.worker.onmessage = (
-        event: MessageEvent<DatabaseResponse>
-      ): void => {
+      this.worker.onmessage = (event: MessageEvent<DatabaseResponse>): void => {
         const response = event.data;
 
-        if (response.type === 'ready') {
+        if (response.type === "ready") {
           resolve(response);
           return;
         }
 
-        if (response.type === 'fatal') {
+        if (response.type === "fatal") {
           const error = new Error(response.message);
           reject(error);
           this.rejectPending(error);
@@ -55,7 +46,7 @@ export class DatabaseClient {
 
         this.pending.delete(response.id);
 
-        if (response.type === 'error') {
+        if (response.type === "error") {
           task.reject(new Error(response.message));
         } else {
           task.resolve(response);
@@ -63,9 +54,7 @@ export class DatabaseClient {
       };
 
       this.worker.onerror = (event: ErrorEvent): void => {
-        const error = new Error(
-          event.message || 'Database worker failed.'
-        );
+        const error = new Error(event.message || "Database worker failed.");
 
         reject(error);
         this.rejectPending(error);
@@ -81,9 +70,7 @@ export class DatabaseClient {
     this.pending.clear();
   }
 
-  private async send(
-    request: DatabaseCommand
-  ): Promise<Result> {
+  private async send(request: DatabaseCommand): Promise<Result> {
     await this.ready;
 
     const id = ++this.nextId;
@@ -97,26 +84,24 @@ export class DatabaseClient {
 
   public async getAccounts(): Promise<Account[]> {
     const response = await this.send({
-      type: 'getAccounts',
+      type: "getAccounts",
     });
 
-    if (response.type !== 'accounts') {
-      throw new Error('Unexpected database response.');
+    if (response.type !== "accounts") {
+      throw new Error("Unexpected database response.");
     }
 
     return response.accounts;
   }
 
-  public async createAccount(
-    input: CreateAccountInput
-  ): Promise<Account> {
+  public async createAccount(input: CreateAccountInput): Promise<Account> {
     const response = await this.send({
-      type: 'createAccount',
+      type: "createAccount",
       input,
     });
 
-    if (response.type !== 'accountCreated') {
-      throw new Error('Unexpected database response.');
+    if (response.type !== "accountCreated") {
+      throw new Error("Unexpected database response.");
     }
 
     return response.account;
@@ -124,8 +109,6 @@ export class DatabaseClient {
 
   public close(): void {
     this.worker.terminate();
-    this.rejectPending(
-      new Error('Database client was closed.')
-    );
+    this.rejectPending(new Error("Database client was closed."));
   }
 }

@@ -1,29 +1,32 @@
-import './styles/main.css';
+import "./styles/main.css";
 
-import { DatabaseClient } from './db/client';
-import type { Account, AccountSubtype } from './db/types';
+import { netWorth } from "./core/ledger";
+import { formatCents } from "./core/money";
+import { DatabaseClient } from "./db/client";
+import type { Account, AccountSubtype } from "./db/types";
 
 const database = new DatabaseClient();
 
 const accountTypes: ReadonlySet<string> = new Set<AccountSubtype>([
-  'checking',
-  'savings',
-  'cash',
-  'gift_card',
-  'credit_card',
-  'loan',
-  'other',
+  "checking",
+  "savings",
+  "cash",
+  "gift_card",
+  "credit_card",
+  "loan",
+  "other",
 ]);
 
-const form = getElement<HTMLFormElement>('#account-form');
-const nameInput = getElement<HTMLInputElement>('#account-name');
-const typeSelect = getElement<HTMLSelectElement>('#account-type');
-const addButton = getElement<HTMLButtonElement>('#add-button');
-const refreshButton = getElement<HTMLButtonElement>('#refresh-button');
-const accountList = getElement<HTMLUListElement>('#account-list');
-const accountCount = getElement<HTMLParagraphElement>('#account-count');
-const status = getElement<HTMLParagraphElement>('#status');
-const databaseInfo = getElement<HTMLElement>('#database-info');
+const form = getElement<HTMLFormElement>("#account-form");
+const nameInput = getElement<HTMLInputElement>("#account-name");
+const typeSelect = getElement<HTMLSelectElement>("#account-type");
+const addButton = getElement<HTMLButtonElement>("#add-button");
+const refreshButton = getElement<HTMLButtonElement>("#refresh-button");
+const accountList = getElement<HTMLUListElement>("#account-list");
+const accountCount = getElement<HTMLParagraphElement>("#account-count");
+const status = getElement<HTMLParagraphElement>("#status");
+const databaseInfo = getElement<HTMLElement>("#database-info");
+const netWorthText = getElement<HTMLParagraphElement>("#net-worth");
 
 let busy: boolean = true;
 
@@ -48,7 +51,7 @@ function setBusy(value: boolean): void {
 
 function setStatus(
   message: string,
-  state: 'success' | 'error' | 'neutral' = 'neutral',
+  state: "success" | "error" | "neutral" = "neutral",
 ): void {
   status.textContent = message;
   status.dataset.state = state;
@@ -56,13 +59,13 @@ function setStatus(
 
 function formatAccountType(subtype: string): string {
   const labels: Record<string, string> = {
-    checking: 'Checking',
-    savings: 'Savings',
-    cash: 'Cash',
-    gift_card: 'Gift Card',
-    credit_card: 'Credit Card',
-    loan: 'Loan',
-    other: 'Other',
+    checking: "Checking",
+    savings: "Savings",
+    cash: "Cash",
+    gift_card: "Gift Card",
+    credit_card: "Credit Card",
+    loan: "Loan",
+    other: "Other",
   };
 
   return labels[subtype] ?? subtype;
@@ -71,41 +74,58 @@ function formatAccountType(subtype: string): string {
 function renderAccounts(accounts: Account[]): void {
   accountList.replaceChildren();
 
-  accountCount.textContent =
-    `${accounts.length} account${accounts.length === 1 ? '' : 's'}`;
+  accountCount.textContent = `${accounts.length} account${accounts.length === 1 ? "" : "s"}`;
+
+  netWorthText.textContent = `Net worth: ${formatCents(
+    netWorth(
+      accounts.map((account) => {
+        return {
+          type: account.type,
+          balanceCents: account.balanceCents,
+        };
+      }),
+    ),
+  )}`;
 
   if (accounts.length === 0) {
-    const empty = document.createElement('li');
+    const empty = document.createElement("li");
 
-    empty.className = 'empty-state';
-    empty.textContent = 'No accounts yet. Add one to get started.';
+    empty.className = "empty-state";
+    empty.textContent = "No accounts yet. Add one to get started.";
 
     accountList.append(empty);
     return;
   }
 
   for (const account of accounts) {
-    const item = document.createElement('li');
-    item.className = 'account-item';
+    const item = document.createElement("li");
+    item.className = "account-item";
 
-    const details = document.createElement('div');
-    details.className = 'account-details';
+    const details = document.createElement("div");
+    details.className = "account-details";
 
-    const name = document.createElement('strong');
+    const name = document.createElement("strong");
     name.textContent = account.name;
 
-    const subtype = document.createElement('span');
+    const subtype = document.createElement("span");
     subtype.textContent = formatAccountType(account.subtype);
 
-    const id = document.createElement('small');
+    const id = document.createElement("small");
     id.textContent = account.id;
-    id.title = 'Account ID';
+    id.title = "Account ID";
 
     details.append(name, subtype, id);
 
-    const badge = document.createElement('span');
-    badge.className = 'account-badge';
+    const badge = document.createElement("span");
+    badge.className = "account-badge";
     badge.textContent = account.type;
+
+    const balance = document.createElement("span");
+    balance.className = "account-balance";
+    balance.textContent =
+      account.type === "liability"
+        ? `${formatCents(account.balanceCents)} owed`
+        : formatCents(account.balanceCents);
 
     item.append(details, badge);
     accountList.append(item);
@@ -124,16 +144,13 @@ async function runAction(
   if (busy) return;
 
   setBusy(true);
-  setStatus('Working...');
+  setStatus("Working...");
 
   try {
     await action();
-    setStatus(successMessage, 'success');
+    setStatus(successMessage, "success");
   } catch (error: unknown) {
-    setStatus(
-      error instanceof Error ? error.message : String(error),
-      'error',
-    );
+    setStatus(error instanceof Error ? error.message : String(error), "error");
   } finally {
     setBusy(false);
   }
@@ -143,7 +160,7 @@ function isAccountSubtype(value: string): value is AccountSubtype {
   return accountTypes.has(value);
 }
 
-form.addEventListener('submit', (event: SubmitEvent): void => {
+form.addEventListener("submit", (event: SubmitEvent): void => {
   event.preventDefault();
 
   void runAction(async (): Promise<void> => {
@@ -151,25 +168,22 @@ form.addEventListener('submit', (event: SubmitEvent): void => {
     const subtype: string = typeSelect.value;
 
     if (name.length === 0) {
-      throw new Error('Please enter an account name.');
+      throw new Error("Please enter an account name.");
     }
 
     if (!isAccountSubtype(subtype)) {
-      throw new Error('Invalid account type.');
+      throw new Error("Invalid account type.");
     }
 
     await database.createAccount({ name, subtype });
 
     await refreshAccounts();
     form.reset();
-  }, 'Account created successfully.');
+  }, "Account created successfully.");
 });
 
-refreshButton.addEventListener('click', (): void => {
-  void runAction(
-    refreshAccounts,
-    'Accounts refreshed successfully.',
-  );
+refreshButton.addEventListener("click", (): void => {
+  void runAction(refreshAccounts, "Accounts refreshed successfully.");
 });
 
 async function initializeApp(): Promise<void> {
@@ -178,20 +192,16 @@ async function initializeApp(): Promise<void> {
   try {
     const ready = await database.ready;
 
-    databaseInfo.textContent =
-      `SQLite ${ready.sqliteVersion} | Schema ${ready.schemaVersion}`;
+    databaseInfo.textContent = `SQLite ${ready.sqliteVersion} | Schema ${ready.schemaVersion}`;
 
     await refreshAccounts();
 
-    setStatus('Local database connected.', 'success');
+    setStatus("Local database connected.", "success");
     setBusy(false);
   } catch (error: unknown) {
-    setStatus(
-      error instanceof Error ? error.message : String(error),
-      'error',
-    );
+    setStatus(error instanceof Error ? error.message : String(error), "error");
 
-    accountCount.textContent = 'Database unavailable.';
+    accountCount.textContent = "Database unavailable.";
   }
 }
 
