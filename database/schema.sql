@@ -67,3 +67,7 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 INSERT OR IGNORE INTO budgets(id,name,is_default) VALUES ('00000000-0000-4000-8000-000000000001','Unallocated',1);
 INSERT OR IGNORE INTO settings(key,value) VALUES ('currency','USD');
+INSERT OR IGNORE INTO accounts(id,name,type,subtype) VALUES
+  ('00000000-0000-4000-8000-000000000101','Income','income','system'),
+  ('00000000-0000-4000-8000-000000000102','Expenses','expense','system'),
+  ('00000000-0000-4000-8000-000000000103','Opening Balances','equity','system');

@@ -78,6 +78,7 @@ async function initializeDatabase(): Promise<void> {
                 id, name, type, subtype, is_hidden, is_archived, created_at
               FROM accounts
               WHERE is_hidden = 0
+                AND type IN ('asset', 'liability')
               ORDER BY name
             `);
 
