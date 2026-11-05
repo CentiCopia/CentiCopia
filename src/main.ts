@@ -127,7 +127,7 @@ function renderAccounts(accounts: Account[]): void {
         ? `${formatCents(account.balanceCents)} owed`
         : formatCents(account.balanceCents);
 
-    item.append(details, badge);
+    item.append(details, badge, balance);
     accountList.append(item);
   }
 }
