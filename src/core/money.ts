@@ -15,3 +15,19 @@ export function formatCents(
     currency,
   }).format(dollars);
 }
+
+export function parseCents(input: string): number | null {
+  const text: string = input.trim().replaceAll(",", "");
+  const match: RegExpExecArray | null = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(
+    text,
+  );
+
+  if (match === null) return null;
+
+  const [, sign, whole, fraction = ""] = match;
+  const cents: number = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
+
+  if (!Number.isSafeInteger(cents)) return null;
+
+  return sign === "-" && cents !== 0 ? -cents : cents;
+}

@@ -5,6 +5,32 @@ export const EXPENSES_ACCOUNT_ID: string =
   "00000000-0000-4000-8000-000000000102";
 export const OPENING_BALANCES_ACCOUNT_ID: string =
   "00000000-0000-4000-8000-000000000103";
+export const DEFAULT_BUDGET_ID: string = "00000000-0000-4000-8000-000000000001";
+
+export interface EntryDraft {
+  accountId: string;
+  amountCents: number;
+}
+
+/**
+ * Entries for an account's opening balance. For a liability the user
+ * enters the amount owed, which is stored as a negative (credit) entry.
+ */
+export function buildOpeningEntries(
+  accountId: string,
+  type: AccountType,
+  balanceCents: number,
+): EntryDraft[] {
+  if (balanceCents === 0) return [];
+
+  const accountSide: number =
+    type === "liability" ? -balanceCents : balanceCents;
+
+  return [
+    { accountId, amountCents: accountSide },
+    { accountId: OPENING_BALANCES_ACCOUNT_ID, amountCents: -accountSide },
+  ];
+}
 
 /**
  * A transaction is balanced when its entries are non-zero integer cents

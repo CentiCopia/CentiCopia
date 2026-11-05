@@ -1,7 +1,7 @@
 import "./styles/main.css";
 
 import { netWorth } from "./core/ledger";
-import { formatCents } from "./core/money";
+import { formatCents, parseCents } from "./core/money";
 import { DatabaseClient } from "./db/client";
 import type { Account, AccountSubtype } from "./db/types";
 
@@ -20,6 +20,8 @@ const accountTypes: ReadonlySet<string> = new Set<AccountSubtype>([
 const form = getElement<HTMLFormElement>("#account-form");
 const nameInput = getElement<HTMLInputElement>("#account-name");
 const typeSelect = getElement<HTMLSelectElement>("#account-type");
+const balanceInput = getElement<HTMLInputElement>("#opening-balance");
+const dateInput = getElement<HTMLInputElement>("#opening-date");
 const addButton = getElement<HTMLButtonElement>("#add-button");
 const refreshButton = getElement<HTMLButtonElement>("#refresh-button");
 const accountList = getElement<HTMLUListElement>("#account-list");
@@ -47,6 +49,18 @@ function setBusy(value: boolean): void {
   refreshButton.disabled = value;
   nameInput.disabled = value;
   typeSelect.disabled = value;
+  balanceInput.disabled = value;
+  dateInput.disabled = value;
+}
+
+function todayLocal(): string {
+  // en-CA formats as YYYY-MM-DD in the user's local time zone.
+  return new Date().toLocaleDateString("en-CA");
+}
+
+function resetForm(): void {
+  form.reset();
+  dateInput.value = todayLocal();
 }
 
 function setStatus(
@@ -166,6 +180,13 @@ form.addEventListener("submit", (event: SubmitEvent): void => {
   void runAction(async (): Promise<void> => {
     const name: string = nameInput.value.trim();
     const subtype: string = typeSelect.value;
+    const balanceText: string = balanceInput.value.trim();
+    const openingBalanceCents: number | null =
+      balanceText === "" ? 0 : parseCents(balanceText);
+
+    if (openingBalanceCents === null) {
+      throw new Error("Opening balance must be an amount like 500.00.");
+    }
 
     if (name.length === 0) {
       throw new Error("Please enter an account name.");
@@ -175,10 +196,15 @@ form.addEventListener("submit", (event: SubmitEvent): void => {
       throw new Error("Invalid account type.");
     }
 
-    await database.createAccount({ name, subtype });
+    await database.createAccount({
+      name,
+      subtype,
+      openingBalanceCents,
+      openingDate: dateInput.value,
+    });
 
     await refreshAccounts();
-    form.reset();
+    resetForm();
   }, "Account created successfully.");
 });
 

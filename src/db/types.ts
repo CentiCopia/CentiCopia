@@ -25,4 +25,6 @@ export interface Account {
 export interface CreateAccountInput {
   name: string;
   subtype: AccountSubtype;
+  openingBalanceCents: number;
+  openingDate: string | null;
 }

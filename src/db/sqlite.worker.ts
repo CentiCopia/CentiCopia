@@ -2,6 +2,12 @@ import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 
 import schemaV1 from "../../database/schema.sql?raw";
 import { migrate } from "../../database/migrate";
+import { isIsoDate } from "../core/dates";
+import {
+  buildOpeningEntries,
+  DEFAULT_BUDGET_ID,
+  isBalanced,
+} from "../core/ledger";
 
 import type { DatabaseRequest, DatabaseResponse } from "./protocol";
 
@@ -87,9 +93,7 @@ async function initializeDatabase(): Promise<void> {
                 throw new Error("Unexpected account row shape.");
               }
 
-              // TODO: calculate the account balance here
-              const balance: number = 0;
-              return mapAccount(row, balance);
+              return mapAccount(row);
             });
 
             const response: DatabaseResponse = {
@@ -127,19 +131,78 @@ async function initializeDatabase(): Promise<void> {
 
             const id = crypto.randomUUID();
             const type = getAccountType(input.subtype);
+            const openingBalanceCents: number = input.openingBalanceCents;
+            const openingDate: string | null = input.openingDate;
 
-            db.exec({
-              sql: `
-                INSERT INTO accounts
-                  (id, name, type, subtype)
-                VALUES ($id, $name, $type, $subtype)
-              `,
-              bind: {
-                $id: id,
-                $name: name,
-                $type: type,
-                $subtype: input.subtype,
-              },
+            if (!Number.isSafeInteger(openingBalanceCents)) {
+              throw new Error(
+                "Opening balance must be a whole number of cents.",
+              );
+            }
+
+            if (openingDate !== null && !isIsoDate(openingDate)) {
+              throw new Error("Opening date must be a valid date.");
+            }
+
+            if (openingBalanceCents !== 0 && openingDate === null) {
+              throw new Error(
+                "An opening date is required with an opening balance.",
+              );
+            }
+
+            db.transaction((): void => {
+              db.exec({
+                sql: `
+                  INSERT INTO accounts (id, name, type, subtype, opening_date)
+                  VALUES ($id, $name, $type, $subtype, $openingDate)
+                `,
+                bind: {
+                  $id: id,
+                  $name: name,
+                  $type: type,
+                  $subtype: input.subtype,
+                  $openingDate: openingDate,
+                },
+              });
+
+              const entries = buildOpeningEntries(
+                id,
+                type,
+                openingBalanceCents,
+              );
+
+              if (entries.length === 0) return;
+
+              if (!isBalanced(entries.map((entry) => entry.amountCents))) {
+                throw new Error("Opening entries are not balanced.");
+              }
+
+              const transactionId: string = crypto.randomUUID();
+
+              db.exec({
+                sql: `
+                  INSERT INTO transactions (id, occurred_on, memo)
+                  VALUES ($id, $occurredOn, 'Opening balance')
+                `,
+                bind: { $id: transactionId, $occurredOn: openingDate },
+              });
+
+              for (const entry of entries) {
+                db.exec({
+                  sql: `
+                    INSERT INTO entries
+                      (id, transaction_id, account_id, amount_cents, budget_id)
+                    VALUES ($id, $transactionId, $accountId, $amount, $budgetId)
+                  `,
+                  bind: {
+                    $id: crypto.randomUUID(),
+                    $transactionId: transactionId,
+                    $accountId: entry.accountId,
+                    $amount: entry.amountCents,
+                    $budgetId: DEFAULT_BUDGET_ID,
+                  },
+                });
+              }
             });
 
             const row: unknown = db.selectObject(

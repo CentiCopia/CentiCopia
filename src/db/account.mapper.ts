@@ -1,3 +1,4 @@
+import { toDisplayBalance } from "../core/ledger";
 import type { Account, AccountType } from "./types";
 
 export interface AccountRow {
@@ -6,18 +7,19 @@ export interface AccountRow {
   type: AccountType;
   subtype: string;
   opening_date: string | null;
+  balance_cents: number;
   is_hidden: number;
   is_archived: number;
   created_at: string;
 }
 
-export function mapAccount(row: AccountRow, balanceCents: number = 0): Account {
+export function mapAccount(row: AccountRow): Account {
   return {
     id: row.id,
     name: row.name,
     type: row.type,
     subtype: row.subtype,
-    balanceCents: 0,
+    balanceCents: toDisplayBalance(row.type, row.balance_cents),
     openingDate: row.opening_date,
     isHidden: row.is_hidden === 1,
     isArchived: row.is_archived === 1,

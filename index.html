@@ -43,6 +43,18 @@
               <option value="loan">Loan</option>
               <option value="other">Other</option>
             </select>
+            <label for="opening-balance">Opening Balance (optional)</label>
+            <input
+              id="opening-balance"
+              name="openingBalance"
+              type="text"
+              inputmode="decimal"
+              placeholder="0.00"
+              autocomplete="off"
+            />
+
+            <label for="opening-date">Opening Date</label>
+            <input id="opening-date" name="openingDate" type="date" required />
 
             <button id="add-button" type="submit" disabled>Add Account</button>
           </form>
