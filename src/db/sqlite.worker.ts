@@ -15,6 +15,20 @@ import type {
 import { mapAccount, isAccountRow } from "./account.mapper";
 import type { AccountRow } from "./account.mapper";
 
+const ACCOUNT_SELECT: string = `
+  SELECT
+    a.id, a.name, a.type, a.subtype, a.opening_date,
+    a.is_hidden, a.is_archived, a.created_at,
+    COALESCE(SUM(e.amount_cents), 0) AS balance_cents
+  FROM accounts a
+  LEFT JOIN (
+    SELECT en.account_id, en.amount_cents
+    FROM entries en
+    JOIN transactions t ON t.id = en.transaction_id
+    WHERE t.status != 'void'
+  ) e ON e.account_id = a.id
+`;
+
 function getAccountType(subtype: AccountSubtype): AccountType {
   switch (subtype) {
     case "credit_card":
@@ -61,12 +75,11 @@ async function initializeDatabase(): Promise<void> {
         switch (request.type) {
           case "getAccounts": {
             const rows: unknown[] = db.selectObjects(`
-              SELECT
-                id, name, type, subtype, opening_date, is_hidden, is_archived, created_at
-              FROM accounts
-              WHERE is_hidden = 0
-                AND type IN ('asset', 'liability')
-              ORDER BY name
+            ${ACCOUNT_SELECT}
+            WHERE a.is_hidden = 0
+              AND a.type IN ('asset', 'liability')
+            GROUP BY a.id
+            ORDER BY a.name
             `);
 
             const accounts: Account[] = rows.map((row: unknown): Account => {
@@ -130,9 +143,7 @@ async function initializeDatabase(): Promise<void> {
             });
 
             const row: unknown = db.selectObject(
-              `SELECT
-                id, name, type, subtype, opening_date, is_hidden, is_archived, created_at
-              FROM accounts WHERE id = ?`,
+              `${ACCOUNT_SELECT} WHERE a.id = ? GROUP BY a.id`,
               [id],
             );
 
