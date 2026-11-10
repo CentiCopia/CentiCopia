@@ -16,10 +16,12 @@ import type {
   AccountSubtype,
   AccountType,
   CreateAccountInput,
+  UpdateAccountInput,
 } from "./types";
 
 import { mapAccount, isAccountRow } from "./account.mapper";
 import type { AccountRow } from "./account.mapper";
+import { normalizeAccountName } from "../core/accounts";
 
 const ACCOUNT_SELECT: string = `
   SELECT
@@ -82,8 +84,6 @@ async function initializeDatabase(): Promise<void> {
           case "getAccounts": {
             const rows: unknown[] = db.selectObjects(`
             ${ACCOUNT_SELECT}
-            WHERE a.is_hidden = 0
-              AND a.type IN ('asset', 'liability')
             GROUP BY a.id
             ORDER BY a.name
             `);
@@ -109,7 +109,7 @@ async function initializeDatabase(): Promise<void> {
           case "createAccount": {
             const input: CreateAccountInput = request.input;
 
-            const name = input.name.trim();
+            const name = normalizeAccountName(input.name);
 
             if (name.length === 0 || name.length > 100) {
               throw new Error("Account name must be 1-100 characters.");
@@ -218,6 +218,81 @@ async function initializeDatabase(): Promise<void> {
               id: request.id,
               type: "accountCreated",
               account: mapAccount(row),
+            };
+
+            self.postMessage(response);
+            break;
+          }
+
+          case "updateAccount": {
+            const input: UpdateAccountInput = request.input;
+
+            if (
+              input.name === undefined &&
+              input.isHidden === undefined &&
+              input.isArchived === undefined
+            ) {
+              throw new Error("Nothing to update.");
+            }
+
+            const name: string | undefined =
+              input.name === undefined
+                ? undefined
+                : normalizeAccountName(input.name);
+
+            const existing: unknown = db.selectObject(
+              `${ACCOUNT_SELECT}
+                    WHERE a.id = ? AND a.type IN ('asset', 'liability')
+                    GROUP BY a.id`,
+              [input.id],
+            );
+
+            if (!isAccountRow(existing)) {
+              throw new Error("Account not found.");
+            }
+
+            if (input.isArchived === true && existing.balance_cents !== 0) {
+              throw new Error(
+                "Only accounts with a zero balance can be archived.",
+              );
+            }
+
+            db.transaction((): void => {
+              if (name !== undefined) {
+                db.exec({
+                  sql: "UPDATE accounts SET name = $name WHERE id = $id",
+                  bind: { $name: name, $id: input.id },
+                });
+              }
+
+              if (input.isHidden !== undefined) {
+                db.exec({
+                  sql: "UPDATE accounts SET is_hidden = $value WHERE id = $id",
+                  bind: { $value: input.isHidden ? 1 : 0, $id: input.id },
+                });
+              }
+
+              if (input.isArchived !== undefined) {
+                db.exec({
+                  sql: "UPDATE accounts SET is_archived = $value WHERE id = $id",
+                  bind: { $value: input.isArchived ? 1 : 0, $id: input.id },
+                });
+              }
+            });
+
+            const updated: unknown = db.selectObject(
+              `${ACCOUNT_SELECT} WHERE a.id = ? GROUP BY a.id`,
+              [input.id],
+            );
+
+            if (!isAccountRow(updated)) {
+              throw new Error("Account update failed.");
+            }
+
+            const response: DatabaseResponse = {
+              id: request.id,
+              type: "accountUpdated",
+              account: mapAccount(updated),
             };
 
             self.postMessage(response);

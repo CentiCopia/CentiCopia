@@ -28,3 +28,10 @@ export interface CreateAccountInput {
   openingBalanceCents: number;
   openingDate: string | null;
 }
+
+export interface UpdateAccountInput {
+  id: string;
+  name?: string;
+  isHidden?: boolean;
+  isArchived?: boolean;
+}

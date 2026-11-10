@@ -3,7 +3,7 @@ import "./styles/main.css";
 import { netWorth } from "./core/ledger";
 import { formatCents, parseCents } from "./core/money";
 import { DatabaseClient } from "./db/client";
-import type { Account, AccountSubtype } from "./db/types";
+import type { Account, AccountSubtype, UpdateAccountInput } from "./db/types";
 
 const database = new DatabaseClient();
 
@@ -24,11 +24,16 @@ const balanceInput = getElement<HTMLInputElement>("#opening-balance");
 const dateInput = getElement<HTMLInputElement>("#opening-date");
 const addButton = getElement<HTMLButtonElement>("#add-button");
 const refreshButton = getElement<HTMLButtonElement>("#refresh-button");
+const showHidden = getElement<HTMLInputElement>("#show-inactive");
+const showArchived = getElement<HTMLInputElement>("#show-archived");
+const showAdmin = getElement<HTMLInputElement>("#show-admin");
 const accountList = getElement<HTMLUListElement>("#account-list");
 const accountCount = getElement<HTMLParagraphElement>("#account-count");
 const status = getElement<HTMLParagraphElement>("#status");
 const databaseInfo = getElement<HTMLElement>("#database-info");
 const netWorthText = getElement<HTMLParagraphElement>("#net-worth");
+
+let allAccounts: Account[] = [];
 
 let busy: boolean = true;
 
@@ -51,6 +56,9 @@ function setBusy(value: boolean): void {
   typeSelect.disabled = value;
   balanceInput.disabled = value;
   dateInput.disabled = value;
+  showAdmin.disabled = value;
+  showArchived.disabled = value;
+  showHidden.disabled = value;
 }
 
 function todayLocal(): string {
@@ -85,10 +93,53 @@ function formatAccountType(subtype: string): string {
   return labels[subtype] ?? subtype;
 }
 
-function renderAccounts(accounts: Account[]): void {
+function makeActionButton(
+  label: string,
+  onClick: () => void,
+): HTMLButtonElement {
+  const button: HTMLButtonElement = document.createElement("button");
+
+  button.type = "button";
+  button.className = "secondary-button";
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+
+  return button;
+}
+
+function changeAccount(input: UpdateAccountInput, message: string): void {
+  runAction(async (): Promise<void> => {
+    await database.updateAccount(input);
+    await refreshAccounts();
+  }, message);
+}
+
+function renameAccount(account: Account): void {
+  // TODO: replace prompt() with an inline editor later.
+  const next: string | null = window.prompt("New account name", account.name);
+
+  if (next === null) return;
+
+  changeAccount({ id: account.id, name: next }, "Account renamed.");
+}
+
+function isAdmin(account: Account): boolean {
+  return !["asset", "liability"].includes(account.type);
+}
+
+function renderAccounts(accounts: Account[] = allAccounts): void {
+  const visible: Account[] =
+    showHidden.checked && showArchived.checked && showAdmin.checked
+      ? accounts
+      : accounts.filter((account: Account): boolean => {
+          if (!showHidden.checked && account.isHidden) return false;
+          else if (!showArchived.checked && account.isArchived) return false;
+          else if (!showAdmin.checked && isAdmin(account)) return false;
+          else return true;
+        });
   accountList.replaceChildren();
 
-  accountCount.textContent = `${accounts.length} account${accounts.length === 1 ? "" : "s"}`;
+  accountCount.textContent = `${visible.length} account${visible.length === 1 ? "" : "s"}`;
 
   netWorthText.textContent = `Net worth: ${formatCents(
     netWorth(
@@ -101,7 +152,7 @@ function renderAccounts(accounts: Account[]): void {
     ),
   )}`;
 
-  if (accounts.length === 0) {
+  if (visible.length === 0) {
     const empty = document.createElement("li");
 
     empty.className = "empty-state";
@@ -111,7 +162,7 @@ function renderAccounts(accounts: Account[]): void {
     return;
   }
 
-  for (const account of accounts) {
+  for (const account of visible) {
     const item = document.createElement("li");
     item.className = "account-item";
 
@@ -134,6 +185,35 @@ function renderAccounts(accounts: Account[]): void {
     badge.className = "account-badge";
     badge.textContent = account.type;
 
+    if (account.isHidden || account.isArchived || isAdmin(account)) {
+      item.classList.add("is-inactive");
+    }
+
+    const actions: HTMLDivElement = document.createElement("div");
+    actions.className = "account-actions";
+
+    if (!isAdmin(account)) {
+      actions.append(
+        makeActionButton("Rename", (): void => renameAccount(account)),
+        makeActionButton(account.isHidden ? "Unhide" : "Hide", (): void =>
+          changeAccount(
+            { id: account.id, isHidden: !account.isHidden },
+            account.isHidden ? "Account unhidden." : "Account hidden.",
+          ),
+        ),
+        makeActionButton(
+          account.isArchived ? "Unarchive" : "Archive",
+          (): void =>
+            changeAccount(
+              { id: account.id, isArchived: !account.isArchived },
+              account.isArchived ? "Account unarchived." : "Account archived.",
+            ),
+        ),
+      );
+    } else {
+      actions.append("Admin accounts cannot be modified.");
+    }
+
     const balance = document.createElement("span");
     balance.className = "account-balance";
     balance.textContent =
@@ -141,15 +221,25 @@ function renderAccounts(accounts: Account[]): void {
         ? `${formatCents(account.balanceCents)} owed`
         : formatCents(account.balanceCents);
 
-    item.append(details, badge, balance);
+    item.append(details, balance, badge, actions);
     accountList.append(item);
   }
 }
 
 async function refreshAccounts(): Promise<void> {
-  const accounts: Account[] = await database.getAccounts();
-  renderAccounts(accounts);
+  allAccounts = await database.getAccounts();
+  renderAccounts();
 }
+
+showArchived.addEventListener("change", (): void => {
+  renderAccounts();
+});
+showHidden.addEventListener("change", (): void => {
+  renderAccounts();
+});
+showAdmin.addEventListener("change", (): void => {
+  renderAccounts();
+});
 
 async function runAction(
   action: () => Promise<void>,

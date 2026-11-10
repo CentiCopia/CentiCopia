@@ -98,7 +98,7 @@ self-hosted tool presents double-entry simply.
 
 ### Phase 1: accounts complete
 
-- Rename, archive/unarchive, hide/unhide.
+- Rename, archive/unarchive, hide/unhide. (Done)
 - Opening balance entry. (Done)
 - Balance shown per account and net worth total (computed from entries). (Done)
 

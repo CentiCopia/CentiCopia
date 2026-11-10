@@ -1,10 +1,14 @@
-import type { Account, CreateAccountInput } from "./types";
+import type { Account, CreateAccountInput, UpdateAccountInput } from "./types";
 
 export type DatabaseCommand =
   | { type: "getAccounts" }
   | {
       type: "createAccount";
       input: CreateAccountInput;
+    }
+  | {
+      type: "updateAccount";
+      input: UpdateAccountInput;
     };
 
 export type DatabaseRequest = DatabaseCommand & { id: number };
@@ -33,4 +37,9 @@ export type DatabaseResponse =
       type: "error";
       id: number;
       message: string;
+    }
+  | {
+      type: "accountUpdated";
+      id: number;
+      account: Account;
     };

@@ -112,6 +112,34 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+}
+
+.checkbox-labels {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-weight: 400;
+}
+
+.account-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.account-actions button {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+.account-item.is_inactive {
+  opacity: 0.6;
+}
+
 /* Buttons */
 
 button {

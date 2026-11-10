@@ -46,6 +46,7 @@ export function isAccountRow(value: unknown): value is AccountRow {
     typeof row.type === "string" &&
     accountTypes.includes(row.type) &&
     typeof row.subtype === "string" &&
+    typeof row.balance_cents === "number" &&
     (row.opening_date === null || typeof row.opening_date === "string") &&
     typeof row.is_hidden === "number" &&
     typeof row.is_archived === "number" &&

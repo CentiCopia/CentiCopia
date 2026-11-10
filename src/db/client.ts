@@ -1,6 +1,6 @@
 import type { DatabaseCommand, DatabaseResponse } from "./protocol";
 
-import type { Account, CreateAccountInput } from "./types";
+import type { Account, CreateAccountInput, UpdateAccountInput } from "./types";
 
 type Result = Extract<DatabaseResponse, { id: number }>;
 type Ready = Extract<DatabaseResponse, { type: "ready" }>;
@@ -110,5 +110,14 @@ export class DatabaseClient {
   public close(): void {
     this.worker.terminate();
     this.rejectPending(new Error("Database client was closed."));
+  }
+  public async updateAccount(input: UpdateAccountInput): Promise<Account> {
+    const response = await this.send({ type: "updateAccount", input });
+
+    if (response.type !== "accountUpdated") {
+      throw new Error("Unexpected database response.");
+    }
+
+    return response.account;
   }
 }
