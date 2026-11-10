@@ -1,5 +1,5 @@
-import { toDisplayBalance } from "../core/ledger";
-import type { Account, AccountType } from "./types";
+import { toDisplayBalance } from '../core/ledger';
+import type { Account, AccountType } from './types';
 
 export interface AccountRow {
   id: string;
@@ -28,28 +28,28 @@ export function mapAccount(row: AccountRow): Account {
 }
 
 const accountTypes: readonly string[] = [
-  "asset",
-  "liability",
-  "income",
-  "expense",
-  "equity",
+  'asset',
+  'liability',
+  'income',
+  'expense',
+  'equity',
 ];
 
 export function isAccountRow(value: unknown): value is AccountRow {
-  if (typeof value != "object" || value === null) return false;
+  if (typeof value != 'object' || value === null) return false;
 
   const row = value as Record<string, unknown>;
 
   return (
-    typeof row.id === "string" &&
-    typeof row.name === "string" &&
-    typeof row.type === "string" &&
+    typeof row.id === 'string' &&
+    typeof row.name === 'string' &&
+    typeof row.type === 'string' &&
     accountTypes.includes(row.type) &&
-    typeof row.subtype === "string" &&
-    typeof row.balance_cents === "number" &&
-    (row.opening_date === null || typeof row.opening_date === "string") &&
-    typeof row.is_hidden === "number" &&
-    typeof row.is_archived === "number" &&
-    typeof row.created_at === "string"
+    typeof row.subtype === 'string' &&
+    typeof row.balance_cents === 'number' &&
+    (row.opening_date === null || typeof row.opening_date === 'string') &&
+    typeof row.is_hidden === 'number' &&
+    typeof row.is_archived === 'number' &&
+    typeof row.created_at === 'string'
   );
 }

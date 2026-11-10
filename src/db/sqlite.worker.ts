@@ -1,15 +1,15 @@
-import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
+import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 
-import schemaV1 from "../../database/schema.sql?raw";
-import { migrate } from "../../database/migrate";
-import { isIsoDate } from "../core/dates";
+import schemaV1 from '../../database/schema.sql?raw';
+import { migrate } from '../../database/migrate';
+import { isIsoDate } from '../core/dates';
 import {
   buildOpeningEntries,
   DEFAULT_BUDGET_ID,
   isBalanced,
-} from "../core/ledger";
+} from '../core/ledger';
 
-import type { DatabaseRequest, DatabaseResponse } from "./protocol";
+import type { DatabaseRequest, DatabaseResponse } from './protocol';
 
 import type {
   Account,
@@ -17,11 +17,11 @@ import type {
   AccountType,
   CreateAccountInput,
   UpdateAccountInput,
-} from "./types";
+} from './types';
 
-import { mapAccount, isAccountRow } from "./account.mapper";
-import type { AccountRow } from "./account.mapper";
-import { normalizeAccountName } from "../core/accounts";
+import { mapAccount, isAccountRow } from './account.mapper';
+import type { AccountRow } from './account.mapper';
+import { normalizeAccountName } from '../core/accounts';
 
 const ACCOUNT_SELECT: string = `
   SELECT
@@ -39,41 +39,41 @@ const ACCOUNT_SELECT: string = `
 
 function getAccountType(subtype: AccountSubtype): AccountType {
   switch (subtype) {
-    case "credit_card":
-    case "loan":
-      return "liability";
+    case 'credit_card':
+    case 'loan':
+      return 'liability';
 
     default:
-      return "asset";
+      return 'asset';
   }
 }
 
 async function initializeDatabase(): Promise<void> {
   if (!self.crossOriginIsolated) {
-    throw new Error("Cross-origin isolation is required for OPFS.");
+    throw new Error('Cross-origin isolation is required for OPFS.');
   }
 
   const sqlite3 = await sqlite3InitModule();
 
-  const opfsAvailable: boolean = Boolean(sqlite3.capi.sqlite3_vfs_find("opfs"));
+  const opfsAvailable: boolean = Boolean(sqlite3.capi.sqlite3_vfs_find('opfs'));
 
   if (!opfsAvailable) {
-    throw new Error("SQLite OPFS VFS failed to initialize.");
+    throw new Error('SQLite OPFS VFS failed to initialize.');
   }
 
   const resetDatabase: boolean =
-    import.meta.env.DEV && import.meta.env.VITE_RESET_DATABASE === "true";
+    import.meta.env.DEV && import.meta.env.VITE_RESET_DATABASE === 'true';
 
   const databasePath: string = resetDatabase
-    ? "file:/centicopia.sqlite3?delete-before-open=1"
-    : "/centicopia.sqlite3";
+    ? 'file:/centicopia.sqlite3?delete-before-open=1'
+    : '/centicopia.sqlite3';
 
   const db = new sqlite3.oo1.OpfsDb(databasePath);
 
   try {
     migrate(db, [schemaV1]);
 
-    const schemaVersion: number = Number(db.selectValue("PRAGMA user_version"));
+    const schemaVersion: number = Number(db.selectValue('PRAGMA user_version'));
 
     // Register requests only after the database is ready.
     self.onmessage = (event: MessageEvent<DatabaseRequest>): void => {
@@ -81,7 +81,7 @@ async function initializeDatabase(): Promise<void> {
 
       try {
         switch (request.type) {
-          case "getAccounts": {
+          case 'getAccounts': {
             const rows: unknown[] = db.selectObjects(`
             ${ACCOUNT_SELECT}
             GROUP BY a.id
@@ -90,7 +90,7 @@ async function initializeDatabase(): Promise<void> {
 
             const accounts: Account[] = rows.map((row: unknown): Account => {
               if (!isAccountRow(row)) {
-                throw new Error("Unexpected account row shape.");
+                throw new Error('Unexpected account row shape.');
               }
 
               return mapAccount(row);
@@ -98,7 +98,7 @@ async function initializeDatabase(): Promise<void> {
 
             const response: DatabaseResponse = {
               id: request.id,
-              type: "accounts",
+              type: 'accounts',
               accounts,
             };
 
@@ -106,27 +106,27 @@ async function initializeDatabase(): Promise<void> {
             break;
           }
 
-          case "createAccount": {
+          case 'createAccount': {
             const input: CreateAccountInput = request.input;
 
             const name = normalizeAccountName(input.name);
 
             if (name.length === 0 || name.length > 100) {
-              throw new Error("Account name must be 1-100 characters.");
+              throw new Error('Account name must be 1-100 characters.');
             }
 
             const allowedSubtypes: AccountSubtype[] = [
-              "checking",
-              "savings",
-              "cash",
-              "gift_card",
-              "credit_card",
-              "loan",
-              "other",
+              'checking',
+              'savings',
+              'cash',
+              'gift_card',
+              'credit_card',
+              'loan',
+              'other',
             ];
 
             if (!allowedSubtypes.includes(input.subtype)) {
-              throw new Error("Invalid account subtype.");
+              throw new Error('Invalid account subtype.');
             }
 
             const id = crypto.randomUUID();
@@ -136,17 +136,17 @@ async function initializeDatabase(): Promise<void> {
 
             if (!Number.isSafeInteger(openingBalanceCents)) {
               throw new Error(
-                "Opening balance must be a whole number of cents.",
+                'Opening balance must be a whole number of cents.',
               );
             }
 
             if (openingDate !== null && !isIsoDate(openingDate)) {
-              throw new Error("Opening date must be a valid date.");
+              throw new Error('Opening date must be a valid date.');
             }
 
             if (openingBalanceCents !== 0 && openingDate === null) {
               throw new Error(
-                "An opening date is required with an opening balance.",
+                'An opening date is required with an opening balance.',
               );
             }
 
@@ -174,7 +174,7 @@ async function initializeDatabase(): Promise<void> {
               if (entries.length === 0) return;
 
               if (!isBalanced(entries.map((entry) => entry.amountCents))) {
-                throw new Error("Opening entries are not balanced.");
+                throw new Error('Opening entries are not balanced.');
               }
 
               const transactionId: string = crypto.randomUUID();
@@ -211,12 +211,12 @@ async function initializeDatabase(): Promise<void> {
             );
 
             if (!isAccountRow(row)) {
-              throw new Error("Account creation failed.");
+              throw new Error('Account creation failed.');
             }
 
             const response: DatabaseResponse = {
               id: request.id,
-              type: "accountCreated",
+              type: 'accountCreated',
               account: mapAccount(row),
             };
 
@@ -224,7 +224,7 @@ async function initializeDatabase(): Promise<void> {
             break;
           }
 
-          case "updateAccount": {
+          case 'updateAccount': {
             const input: UpdateAccountInput = request.input;
 
             if (
@@ -232,7 +232,7 @@ async function initializeDatabase(): Promise<void> {
               input.isHidden === undefined &&
               input.isArchived === undefined
             ) {
-              throw new Error("Nothing to update.");
+              throw new Error('Nothing to update.');
             }
 
             const name: string | undefined =
@@ -248,33 +248,33 @@ async function initializeDatabase(): Promise<void> {
             );
 
             if (!isAccountRow(existing)) {
-              throw new Error("Account not found.");
+              throw new Error('Account not found.');
             }
 
             if (input.isArchived === true && existing.balance_cents !== 0) {
               throw new Error(
-                "Only accounts with a zero balance can be archived.",
+                'Only accounts with a zero balance can be archived.',
               );
             }
 
             db.transaction((): void => {
               if (name !== undefined) {
                 db.exec({
-                  sql: "UPDATE accounts SET name = $name WHERE id = $id",
+                  sql: 'UPDATE accounts SET name = $name WHERE id = $id',
                   bind: { $name: name, $id: input.id },
                 });
               }
 
               if (input.isHidden !== undefined) {
                 db.exec({
-                  sql: "UPDATE accounts SET is_hidden = $value WHERE id = $id",
+                  sql: 'UPDATE accounts SET is_hidden = $value WHERE id = $id',
                   bind: { $value: input.isHidden ? 1 : 0, $id: input.id },
                 });
               }
 
               if (input.isArchived !== undefined) {
                 db.exec({
-                  sql: "UPDATE accounts SET is_archived = $value WHERE id = $id",
+                  sql: 'UPDATE accounts SET is_archived = $value WHERE id = $id',
                   bind: { $value: input.isArchived ? 1 : 0, $id: input.id },
                 });
               }
@@ -286,12 +286,12 @@ async function initializeDatabase(): Promise<void> {
             );
 
             if (!isAccountRow(updated)) {
-              throw new Error("Account update failed.");
+              throw new Error('Account update failed.');
             }
 
             const response: DatabaseResponse = {
               id: request.id,
-              type: "accountUpdated",
+              type: 'accountUpdated',
               account: mapAccount(updated),
             };
 
@@ -302,7 +302,7 @@ async function initializeDatabase(): Promise<void> {
       } catch (error: unknown) {
         const response: DatabaseResponse = {
           id: request.id,
-          type: "error",
+          type: 'error',
           message: error instanceof Error ? error.message : String(error),
         };
         self.postMessage(response);
@@ -310,7 +310,7 @@ async function initializeDatabase(): Promise<void> {
     };
 
     const ready: DatabaseResponse = {
-      type: "ready",
+      type: 'ready',
       sqliteVersion: sqlite3.version.libVersion,
       schemaVersion,
     };
@@ -326,7 +326,7 @@ async function initializeDatabase(): Promise<void> {
 
 void initializeDatabase().catch((error: unknown): void => {
   const response: DatabaseResponse = {
-    type: "fatal",
+    type: 'fatal',
     message: error instanceof Error ? error.message : String(error),
   };
 

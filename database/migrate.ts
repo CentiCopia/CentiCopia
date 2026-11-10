@@ -4,11 +4,16 @@ export interface SqliteDatabase {
   selectValue(sql: string): unknown;
 }
 
-export function migrate(db: SqliteDatabase, migrations: readonly string[]): void {
+export function migrate(
+  db: SqliteDatabase,
+  migrations: readonly string[],
+): void {
   db.exec('PRAGMA foreign_keys = ON');
   const current = Number(db.selectValue('PRAGMA user_version'));
-  if (!Number.isInteger(current) || current < 0) throw new Error('Invalid schema version');
-  if (current > migrations.length) throw new Error('Database is newer than this app');
+  if (!Number.isInteger(current) || current < 0)
+    throw new Error('Invalid schema version');
+  if (current > migrations.length)
+    throw new Error('Database is newer than this app');
 
   for (let version = current + 1; version <= migrations.length; version++) {
     db.exec('BEGIN IMMEDIATE');

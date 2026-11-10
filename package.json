@@ -8,6 +8,8 @@
   },
   "scripts": {
     "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
@@ -27,6 +29,7 @@
   },
   "homepage": "https://github.com/CentiCopia/CentiCopia#readme",
   "devDependencies": {
+    "prettier": "^3.9.10",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"

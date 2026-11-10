@@ -112,7 +112,7 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-input[type="checkbox"] {
+input[type='checkbox'] {
   width: auto;
   padding: 0;
 }
@@ -274,11 +274,11 @@ button:disabled {
   font-size: 0.875rem;
 }
 
-#status[data-state="success"] {
+#status[data-state='success'] {
   color: #15803d;
 }
 
-#status[data-state="error"] {
+#status[data-state='error'] {
   color: #b91c1c;
 }
 

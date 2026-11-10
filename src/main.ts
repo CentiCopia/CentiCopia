@@ -1,37 +1,37 @@
-import "./styles/main.css";
+import './styles/main.css';
 
-import { netWorth } from "./core/ledger";
-import { formatCents, parseCents } from "./core/money";
-import { DatabaseClient } from "./db/client";
-import type { Account, AccountSubtype, UpdateAccountInput } from "./db/types";
+import { netWorth } from './core/ledger';
+import { formatCents, parseCents } from './core/money';
+import { DatabaseClient } from './db/client';
+import type { Account, AccountSubtype, UpdateAccountInput } from './db/types';
 
 const database = new DatabaseClient();
 
 const accountTypes: ReadonlySet<string> = new Set<AccountSubtype>([
-  "checking",
-  "savings",
-  "cash",
-  "gift_card",
-  "credit_card",
-  "loan",
-  "other",
+  'checking',
+  'savings',
+  'cash',
+  'gift_card',
+  'credit_card',
+  'loan',
+  'other',
 ]);
 
-const form = getElement<HTMLFormElement>("#account-form");
-const nameInput = getElement<HTMLInputElement>("#account-name");
-const typeSelect = getElement<HTMLSelectElement>("#account-type");
-const balanceInput = getElement<HTMLInputElement>("#opening-balance");
-const dateInput = getElement<HTMLInputElement>("#opening-date");
-const addButton = getElement<HTMLButtonElement>("#add-button");
-const refreshButton = getElement<HTMLButtonElement>("#refresh-button");
-const showHidden = getElement<HTMLInputElement>("#show-inactive");
-const showArchived = getElement<HTMLInputElement>("#show-archived");
-const showAdmin = getElement<HTMLInputElement>("#show-admin");
-const accountList = getElement<HTMLUListElement>("#account-list");
-const accountCount = getElement<HTMLParagraphElement>("#account-count");
-const status = getElement<HTMLParagraphElement>("#status");
-const databaseInfo = getElement<HTMLElement>("#database-info");
-const netWorthText = getElement<HTMLParagraphElement>("#net-worth");
+const form = getElement<HTMLFormElement>('#account-form');
+const nameInput = getElement<HTMLInputElement>('#account-name');
+const typeSelect = getElement<HTMLSelectElement>('#account-type');
+const balanceInput = getElement<HTMLInputElement>('#opening-balance');
+const dateInput = getElement<HTMLInputElement>('#opening-date');
+const addButton = getElement<HTMLButtonElement>('#add-button');
+const refreshButton = getElement<HTMLButtonElement>('#refresh-button');
+const showHidden = getElement<HTMLInputElement>('#show-inactive');
+const showArchived = getElement<HTMLInputElement>('#show-archived');
+const showAdmin = getElement<HTMLInputElement>('#show-admin');
+const accountList = getElement<HTMLUListElement>('#account-list');
+const accountCount = getElement<HTMLParagraphElement>('#account-count');
+const status = getElement<HTMLParagraphElement>('#status');
+const databaseInfo = getElement<HTMLElement>('#database-info');
+const netWorthText = getElement<HTMLParagraphElement>('#net-worth');
 
 let allAccounts: Account[] = [];
 
@@ -63,7 +63,7 @@ function setBusy(value: boolean): void {
 
 function todayLocal(): string {
   // en-CA formats as YYYY-MM-DD in the user's local time zone.
-  return new Date().toLocaleDateString("en-CA");
+  return new Date().toLocaleDateString('en-CA');
 }
 
 function resetForm(): void {
@@ -73,7 +73,7 @@ function resetForm(): void {
 
 function setStatus(
   message: string,
-  state: "success" | "error" | "neutral" = "neutral",
+  state: 'success' | 'error' | 'neutral' = 'neutral',
 ): void {
   status.textContent = message;
   status.dataset.state = state;
@@ -81,13 +81,13 @@ function setStatus(
 
 function formatAccountType(subtype: string): string {
   const labels: Record<string, string> = {
-    checking: "Checking",
-    savings: "Savings",
-    cash: "Cash",
-    gift_card: "Gift Card",
-    credit_card: "Credit Card",
-    loan: "Loan",
-    other: "Other",
+    checking: 'Checking',
+    savings: 'Savings',
+    cash: 'Cash',
+    gift_card: 'Gift Card',
+    credit_card: 'Credit Card',
+    loan: 'Loan',
+    other: 'Other',
   };
 
   return labels[subtype] ?? subtype;
@@ -97,12 +97,12 @@ function makeActionButton(
   label: string,
   onClick: () => void,
 ): HTMLButtonElement {
-  const button: HTMLButtonElement = document.createElement("button");
+  const button: HTMLButtonElement = document.createElement('button');
 
-  button.type = "button";
-  button.className = "secondary-button";
+  button.type = 'button';
+  button.className = 'secondary-button';
   button.textContent = label;
-  button.addEventListener("click", onClick);
+  button.addEventListener('click', onClick);
 
   return button;
 }
@@ -116,15 +116,15 @@ function changeAccount(input: UpdateAccountInput, message: string): void {
 
 function renameAccount(account: Account): void {
   // TODO: replace prompt() with an inline editor later.
-  const next: string | null = window.prompt("New account name", account.name);
+  const next: string | null = window.prompt('New account name', account.name);
 
   if (next === null) return;
 
-  changeAccount({ id: account.id, name: next }, "Account renamed.");
+  changeAccount({ id: account.id, name: next }, 'Account renamed.');
 }
 
 function isAdmin(account: Account): boolean {
-  return !["asset", "liability"].includes(account.type);
+  return !['asset', 'liability'].includes(account.type);
 }
 
 function renderAccounts(accounts: Account[] = allAccounts): void {
@@ -139,7 +139,7 @@ function renderAccounts(accounts: Account[] = allAccounts): void {
         });
   accountList.replaceChildren();
 
-  accountCount.textContent = `${visible.length} account${visible.length === 1 ? "" : "s"}`;
+  accountCount.textContent = `${visible.length} account${visible.length === 1 ? '' : 's'}`;
 
   netWorthText.textContent = `Net worth: ${formatCents(
     netWorth(
@@ -153,71 +153,74 @@ function renderAccounts(accounts: Account[] = allAccounts): void {
   )}`;
 
   if (visible.length === 0) {
-    const empty = document.createElement("li");
+    const empty = document.createElement('li');
 
-    empty.className = "empty-state";
-    empty.textContent = "No accounts yet. Add one to get started.";
+    empty.className = 'empty-state';
+    empty.textContent =
+      allAccounts.length === 0
+        ? 'No accounts yet. Add one to get started.'
+        : 'No accounts match the current filters.';
 
     accountList.append(empty);
     return;
   }
 
   for (const account of visible) {
-    const item = document.createElement("li");
-    item.className = "account-item";
+    const item = document.createElement('li');
+    item.className = 'account-item';
 
-    const details = document.createElement("div");
-    details.className = "account-details";
+    const details = document.createElement('div');
+    details.className = 'account-details';
 
-    const name = document.createElement("strong");
+    const name = document.createElement('strong');
     name.textContent = account.name;
 
-    const subtype = document.createElement("span");
+    const subtype = document.createElement('span');
     subtype.textContent = formatAccountType(account.subtype);
 
-    const id = document.createElement("small");
+    const id = document.createElement('small');
     id.textContent = account.id;
-    id.title = "Account ID";
+    id.title = 'Account ID';
 
     details.append(name, subtype, id);
 
-    const badge = document.createElement("span");
-    badge.className = "account-badge";
+    const badge = document.createElement('span');
+    badge.className = 'account-badge';
     badge.textContent = account.type;
 
     if (account.isHidden || account.isArchived || isAdmin(account)) {
-      item.classList.add("is-inactive");
+      item.classList.add('is-inactive');
     }
 
-    const actions: HTMLDivElement = document.createElement("div");
-    actions.className = "account-actions";
+    const actions: HTMLDivElement = document.createElement('div');
+    actions.className = 'account-actions';
 
     if (!isAdmin(account)) {
       actions.append(
-        makeActionButton("Rename", (): void => renameAccount(account)),
-        makeActionButton(account.isHidden ? "Unhide" : "Hide", (): void =>
+        makeActionButton('Rename', (): void => renameAccount(account)),
+        makeActionButton(account.isHidden ? 'Unhide' : 'Hide', (): void =>
           changeAccount(
             { id: account.id, isHidden: !account.isHidden },
-            account.isHidden ? "Account unhidden." : "Account hidden.",
+            account.isHidden ? 'Account unhidden.' : 'Account hidden.',
           ),
         ),
         makeActionButton(
-          account.isArchived ? "Unarchive" : "Archive",
+          account.isArchived ? 'Unarchive' : 'Archive',
           (): void =>
             changeAccount(
               { id: account.id, isArchived: !account.isArchived },
-              account.isArchived ? "Account unarchived." : "Account archived.",
+              account.isArchived ? 'Account unarchived.' : 'Account archived.',
             ),
         ),
       );
     } else {
-      actions.append("Admin accounts cannot be modified.");
+      actions.append('Admin accounts cannot be modified.');
     }
 
-    const balance = document.createElement("span");
-    balance.className = "account-balance";
+    const balance = document.createElement('span');
+    balance.className = 'account-balance';
     balance.textContent =
-      account.type === "liability"
+      account.type === 'liability'
         ? `${formatCents(account.balanceCents)} owed`
         : formatCents(account.balanceCents);
 
@@ -231,13 +234,13 @@ async function refreshAccounts(): Promise<void> {
   renderAccounts();
 }
 
-showArchived.addEventListener("change", (): void => {
+showArchived.addEventListener('change', (): void => {
   renderAccounts();
 });
-showHidden.addEventListener("change", (): void => {
+showHidden.addEventListener('change', (): void => {
   renderAccounts();
 });
-showAdmin.addEventListener("change", (): void => {
+showAdmin.addEventListener('change', (): void => {
   renderAccounts();
 });
 
@@ -248,13 +251,13 @@ async function runAction(
   if (busy) return;
 
   setBusy(true);
-  setStatus("Working...");
+  setStatus('Working...');
 
   try {
     await action();
-    setStatus(successMessage, "success");
+    setStatus(successMessage, 'success');
   } catch (error: unknown) {
-    setStatus(error instanceof Error ? error.message : String(error), "error");
+    setStatus(error instanceof Error ? error.message : String(error), 'error');
   } finally {
     setBusy(false);
   }
@@ -264,7 +267,7 @@ function isAccountSubtype(value: string): value is AccountSubtype {
   return accountTypes.has(value);
 }
 
-form.addEventListener("submit", (event: SubmitEvent): void => {
+form.addEventListener('submit', (event: SubmitEvent): void => {
   event.preventDefault();
 
   void runAction(async (): Promise<void> => {
@@ -272,18 +275,18 @@ form.addEventListener("submit", (event: SubmitEvent): void => {
     const subtype: string = typeSelect.value;
     const balanceText: string = balanceInput.value.trim();
     const openingBalanceCents: number | null =
-      balanceText === "" ? 0 : parseCents(balanceText);
+      balanceText === '' ? 0 : parseCents(balanceText);
 
     if (openingBalanceCents === null) {
-      throw new Error("Opening balance must be an amount like 500.00.");
+      throw new Error('Opening balance must be an amount like 500.00.');
     }
 
     if (name.length === 0) {
-      throw new Error("Please enter an account name.");
+      throw new Error('Please enter an account name.');
     }
 
     if (!isAccountSubtype(subtype)) {
-      throw new Error("Invalid account type.");
+      throw new Error('Invalid account type.');
     }
 
     await database.createAccount({
@@ -295,11 +298,11 @@ form.addEventListener("submit", (event: SubmitEvent): void => {
 
     await refreshAccounts();
     resetForm();
-  }, "Account created successfully.");
+  }, 'Account created successfully.');
 });
 
-refreshButton.addEventListener("click", (): void => {
-  void runAction(refreshAccounts, "Accounts refreshed successfully.");
+refreshButton.addEventListener('click', (): void => {
+  void runAction(refreshAccounts, 'Accounts refreshed successfully.');
 });
 
 async function initializeApp(): Promise<void> {
@@ -312,12 +315,12 @@ async function initializeApp(): Promise<void> {
 
     await refreshAccounts();
 
-    setStatus("Local database connected.", "success");
+    setStatus('Local database connected.', 'success');
     setBusy(false);
   } catch (error: unknown) {
-    setStatus(error instanceof Error ? error.message : String(error), "error");
+    setStatus(error instanceof Error ? error.message : String(error), 'error');
 
-    accountCount.textContent = "Database unavailable.";
+    accountCount.textContent = 'Database unavailable.';
   }
 }
 

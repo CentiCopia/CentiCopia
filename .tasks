@@ -21,6 +21,13 @@ output=terminal
 pos=TAB
 save=1
 
+[format]
+command=npm run format
+cwd=$(VIM_ROOT)
+output=terminal
+pos=TAB
+save=1
+
 [reset]
 command=reset.bat
 cwd=$(VIM_ROOT)

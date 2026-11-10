@@ -1,11 +1,11 @@
-import type { AccountType } from "../db/types";
+import type { AccountType } from '../db/types';
 
-export const INCOME_ACCOUNT_ID: string = "00000000-0000-4000-8000-000000000101";
+export const INCOME_ACCOUNT_ID: string = '00000000-0000-4000-8000-000000000101';
 export const EXPENSES_ACCOUNT_ID: string =
-  "00000000-0000-4000-8000-000000000102";
+  '00000000-0000-4000-8000-000000000102';
 export const OPENING_BALANCES_ACCOUNT_ID: string =
-  "00000000-0000-4000-8000-000000000103";
-export const DEFAULT_BUDGET_ID: string = "00000000-0000-4000-8000-000000000001";
+  '00000000-0000-4000-8000-000000000103';
+export const DEFAULT_BUDGET_ID: string = '00000000-0000-4000-8000-000000000001';
 
 export interface EntryDraft {
   accountId: string;
@@ -24,7 +24,7 @@ export function buildOpeningEntries(
   if (balanceCents === 0) return [];
 
   const accountSide: number =
-    type === "liability" ? -balanceCents : balanceCents;
+    type === 'liability' ? -balanceCents : balanceCents;
 
   return [
     { accountId, amountCents: accountSide },
@@ -57,7 +57,7 @@ export function toDisplayBalance(
   type: AccountType,
   rawSumCents: number,
 ): number {
-  return type === "liability" ? 0 - rawSumCents : rawSumCents;
+  return type === 'liability' ? 0 - rawSumCents : rawSumCents;
 }
 
 /** Net worth = assets held minus liabilities owed. */
@@ -67,8 +67,8 @@ export function netWorth(
   let total: number = 0;
 
   for (const account of accounts) {
-    if (account.type === "asset") total += account.balanceCents;
-    else if (account.type === "liability") total -= account.balanceCents;
+    if (account.type === 'asset') total += account.balanceCents;
+    else if (account.type === 'liability') total -= account.balanceCents;
   }
 
   return total;
