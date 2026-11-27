@@ -20,6 +20,8 @@ time.
 2. **Side-by-side diffs, before you change anything.** For each step,
    show the code as it is now next to the code as it would be —
    a side-by-side (before / after) diff of exactly what will change.
+   Render diffs as plain text in a fenced block; never use HTML —
+   Jim reads them in a terminal.
 3. **No more than 20 lines at a time.** A single diff chunk must never
    exceed 20 lines. If a change is bigger, split it into sequential
    steps of 20 lines or fewer, each shown, explained, and approved
@@ -39,6 +41,8 @@ time.
 - Make small, understandable edits rather than rewriting whole files.
 - Never add a feature, library, or abstraction that was not part of
   the current step.
+- After applying a step, run `npm run format` automatically. Do not
+  show formatting-only diffs or ask for approval to run `format:check`.
 - If a step turns out bigger than expected, stop and re-split it
   rather than pushing through.
 - Keep `docs/sprint_log.md` updated as cards move: what was pulled

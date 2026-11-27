@@ -2,6 +2,7 @@ import './styles/main.css';
 
 import { netWorth } from './core/ledger';
 import { formatCents, parseCents } from './core/money';
+import { findNearName } from './core/names';
 import { DatabaseClient } from './db/client';
 import type { Account, AccountSubtype, UpdateAccountInput } from './db/types';
 
@@ -270,8 +271,20 @@ function isAccountSubtype(value: string): value is AccountSubtype {
 form.addEventListener('submit', (event: SubmitEvent): void => {
   event.preventDefault();
 
+  const name: string = nameInput.value.trim();
+  const existingNames: string[] = allAccounts.map(
+    (account: Account): string => account.name,
+  );
+  const near: string | undefined = findNearName(existingNames, name);
+  if (near !== undefined) {
+    const message: string = `An account named "${near}" already exists. Create "${name}" anyway?`;
+    if (!window.confirm(message)) {
+      setStatus('Account creation cancelled.');
+      return;
+    }
+  }
+
   void runAction(async (): Promise<void> => {
-    const name: string = nameInput.value.trim();
     const subtype: string = typeSelect.value;
     const balanceText: string = balanceInput.value.trim();
     const openingBalanceCents: number | null =
