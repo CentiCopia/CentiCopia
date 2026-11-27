@@ -49,21 +49,13 @@ function getAccountType(subtype: AccountSubtype): AccountType {
 }
 
 async function initializeDatabase(): Promise<void> {
-  if (!self.crossOriginIsolated) {
-    throw new Error('Cross-origin isolation is required for OPFS.');
-  }
-
   const sqlite3 = await sqlite3InitModule();
 
-  const opfsAvailable: boolean = Boolean(sqlite3.capi.sqlite3_vfs_find('opfs'));
-
-  if (!opfsAvailable) {
-    throw new Error('SQLite OPFS VFS failed to initialize.');
-  }
+  const pool = await sqlite3.installOpfsSAHPoolVfs({});
 
   const databasePath: string = '/centicopia.sqlite3';
 
-  const db = new sqlite3.oo1.OpfsDb(databasePath);
+  const db = new pool.OpfsSAHPoolDb(databasePath);
 
   try {
     migrate(db, [schemaV1]);
