@@ -1,6 +1,7 @@
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 
 import schemaV1 from '../../database/schema.sql?raw';
+import migration002 from '../../database/migration_002_parties.sql?raw';
 import { migrate } from '../../database/migrate';
 import { isIsoDate } from '../core/dates';
 import {
@@ -16,12 +17,15 @@ import type {
   AccountSubtype,
   AccountType,
   CreateAccountInput,
+  Party,
   UpdateAccountInput,
 } from './types';
 
 import { mapAccount, isAccountRow } from './account.mapper';
 import type { AccountRow } from './account.mapper';
 import { normalizeAccountName } from '../core/accounts';
+import { normalizeName } from '../core/names';
+import { mapParty, isPartyRow } from './party.mapper';
 
 const ACCOUNT_SELECT: string = `
   SELECT
@@ -58,7 +62,7 @@ async function initializeDatabase(): Promise<void> {
   const db = new pool.OpfsSAHPoolDb(databasePath);
 
   try {
-    migrate(db, [schemaV1]);
+    migrate(db, [schemaV1, migration002]);
 
     const schemaVersion: number = Number(db.selectValue('PRAGMA user_version'));
 
@@ -87,6 +91,29 @@ async function initializeDatabase(): Promise<void> {
               id: request.id,
               type: 'accounts',
               accounts,
+            };
+
+            self.postMessage(response);
+            break;
+          }
+
+          case 'getParties': {
+            const rows: unknown[] = db.selectObjects(`
+              SELECT id, name, phone, email, address, created_at
+              FROM parties
+              ORDER BY name
+            `);
+
+            const parties = rows.map((row: unknown): Party => {
+              if (!isPartyRow(row))
+                throw new Error('Unexpected party row shape.');
+              return mapParty(row);
+            });
+
+            const response: DatabaseResponse = {
+              id: request.id,
+              type: 'parties',
+              parties,
             };
 
             self.postMessage(response);
@@ -208,6 +235,40 @@ async function initializeDatabase(): Promise<void> {
             };
 
             self.postMessage(response);
+            break;
+          }
+
+          case 'createParty': {
+            const name: string = normalizeName('Party', request.input.name);
+            const phone: string | null = request.input.phone?.trim() || null;
+            const email: string | null = request.input.email?.trim() || null;
+            const address: string | null =
+              request.input.address?.trim() || null;
+
+            const row: unknown = db.selectObject(
+              'INSERT INTO parties (id, name, phone, email, address) VALUES (?, ?, ?, ?, ?) RETURNING id, name, phone, email, address, created_at',
+              [crypto.randomUUID(), name, phone, email, address],
+            );
+            if (!isPartyRow(row)) throw new Error('Party creation failed.');
+
+            self.postMessage({
+              id: request.id,
+              type: 'partyCreated',
+              party: mapParty(row),
+            } satisfies DatabaseResponse);
+            break;
+          }
+
+          case 'removeParty': {
+            db.exec({
+              sql: 'DELETE FROM parties WHERE id = ?',
+              bind: [request.partyId],
+            });
+
+            self.postMessage({
+              id: request.id,
+              type: 'partyRemoved',
+            } satisfies DatabaseResponse);
             break;
           }
 

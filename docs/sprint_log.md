@@ -67,14 +67,47 @@ Seeded from the planning board on 2026-11-24.
   starts in the default category, and users can add and remove their
   own categories. Category names use the shared name-matching rule.
 
+### Finished
+
+- **Parties** (8 pts) — add and remove parties with a unique name;
+  phone, email, and address are optional. Uses the shared
+  name-matching rule and its own view behind the responsive menu.
+
 ### Still ahead (in dependency order)
 
+- **Categories** (8 pts) — categorize spending; every transaction
+  starts in the default category, and users can add and remove their
+  own categories. Category names use the shared name-matching rule.
 - **Add a transaction** (3 pts) — depends on Accounts ✅, local
-  storage ✅, and Parties (this iteration).
+  storage ✅, and Parties ✅.
 - **Transfer between accounts** (5 pts), **Filter system** (8 pts),
   **Regular giving subtracted from tithe** (3 pts),
   **Export / save / sync data** (5 pts),
   **Optional extra data protection** (5 pts).
+
+### Notes
+
+- Planned final navigation: a persistent left navbar replaces the
+  section buttons. "Add Account" sits at the top, followed by an
+  expandable section for each account type that has accounts; each
+  account opens a transaction page filtered to it. A divider
+  separates the management links below.
+
+```text
+Add Account
+---
+>Checking
+|>Main
+|>Business
+>Savings
+|>Primary
+|>Retirement
+---
+Manage Parties
+Manage Categories
+Settings
+Import/Export
+```
 
 ### Retro
 

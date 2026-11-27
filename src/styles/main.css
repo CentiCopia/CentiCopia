@@ -9,6 +9,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -56,6 +60,36 @@ select {
   color: #166534;
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+/* View menu */
+
+.menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.view-menu {
+  display: none;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.view-menu.is-open {
+  display: flex;
+}
+
+.view-tab {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.view-tab.is-active {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 /* Dashboard */
@@ -280,6 +314,30 @@ button:disabled {
 
 #status[data-state='error'] {
   color: #b91c1c;
+}
+
+/* Wide screens: persistent side navigation */
+
+@media (min-width: 701px) {
+  #app {
+    display: grid;
+    grid-template-columns: 12rem 1fr;
+  }
+  .app-header,
+  .app-footer {
+    grid-column: 1 / -1;
+  }
+  .menu-toggle {
+    display: none;
+  }
+  .view-menu {
+    display: flex;
+    margin: 0;
+  }
+  #view-accounts,
+  #view-parties {
+    grid-column: 2;
+  }
 }
 
 /* Responsive layout */

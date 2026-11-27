@@ -35,3 +35,19 @@ export interface UpdateAccountInput {
   isHidden?: boolean;
   isArchived?: boolean;
 }
+
+export interface Party {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  createdAt: string;
+}
+
+export interface CreatePartyInput {
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+}

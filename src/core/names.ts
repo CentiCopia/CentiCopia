@@ -1,3 +1,13 @@
+export function normalizeName(label: string, input: string): string {
+  const name: string = input.trim();
+
+  if (name.length === 0 || name.length > 100) {
+    throw new Error(`${label} name must be 1-100 characters.`);
+  }
+
+  return name;
+}
+
 export function nameKey(name: string): string {
   return name.trim().toLowerCase();
 }

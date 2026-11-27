@@ -1,4 +1,10 @@
-import type { Account, CreateAccountInput, UpdateAccountInput } from './types';
+import type {
+  Account,
+  CreateAccountInput,
+  UpdateAccountInput,
+  Party,
+  CreatePartyInput,
+} from './types';
 
 export type DatabaseCommand =
   | { type: 'getAccounts' }
@@ -10,7 +16,13 @@ export type DatabaseCommand =
       type: 'updateAccount';
       input: UpdateAccountInput;
     }
-  | { type: 'resetData' };
+  | { type: 'resetData' }
+  | { type: 'getParties' }
+  | {
+      type: 'createParty';
+      input: CreatePartyInput;
+    }
+  | { type: 'removeParty'; partyId: string };
 
 export type DatabaseRequest = DatabaseCommand & { id: number };
 
@@ -46,5 +58,19 @@ export type DatabaseResponse =
     }
   | {
       type: 'resetCompleted';
+      id: number;
+    }
+  | {
+      type: 'parties';
+      id: number;
+      parties: Party[];
+    }
+  | {
+      type: 'partyCreated';
+      id: number;
+      party: Party;
+    }
+  | {
+      type: 'partyRemoved';
       id: number;
     };

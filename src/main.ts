@@ -4,7 +4,12 @@ import { netWorth } from './core/ledger';
 import { formatCents, parseCents } from './core/money';
 import { findExactName, findNearName } from './core/names';
 import { DatabaseClient } from './db/client';
-import type { Account, AccountSubtype, UpdateAccountInput } from './db/types';
+import type {
+  Account,
+  AccountSubtype,
+  Party,
+  UpdateAccountInput,
+} from './db/types';
 
 const database = new DatabaseClient();
 
@@ -34,8 +39,48 @@ const status = getElement<HTMLParagraphElement>('#status');
 const databaseInfo = getElement<HTMLElement>('#database-info');
 const netWorthText = getElement<HTMLParagraphElement>('#net-worth');
 const resetButton = getElement<HTMLButtonElement>('#reset-button');
+const partyForm = getElement<HTMLFormElement>('#party-form');
+const partyNameInput = getElement<HTMLInputElement>('#party-name');
+const partyPhoneInput = getElement<HTMLInputElement>('#party-phone');
+const partyEmailInput = getElement<HTMLInputElement>('#party-email');
+const partyAddressInput = getElement<HTMLInputElement>('#party-address');
+const addPartyButton = getElement<HTMLButtonElement>('#add-party-button');
+const refreshPartiesButton = getElement<HTMLButtonElement>(
+  '#refresh-parties-button',
+);
+const partyList = getElement<HTMLUListElement>('#party-list');
+const partyCount = getElement<HTMLParagraphElement>('#party-count');
+const menuToggle = getElement<HTMLButtonElement>('#menu-toggle');
+const viewMenu = getElement<HTMLElement>('#view-menu');
+
+menuToggle.addEventListener('click', (): void => {
+  const open: boolean = menuToggle.getAttribute('aria-expanded') === 'true';
+  menuToggle.setAttribute('aria-expanded', String(!open));
+  viewMenu.classList.toggle('is-open', !open);
+});
+
+const viewTabs = document.querySelectorAll<HTMLButtonElement>('.view-tab');
+const views = document.querySelectorAll<HTMLElement>(
+  '#view-accounts, #view-parties',
+);
+
+for (const tab of viewTabs) {
+  tab.addEventListener('click', (): void => {
+    for (const other of viewTabs) {
+      other.classList.toggle('is-active', other === tab);
+    }
+
+    for (const view of views) {
+      view.hidden = view.id !== `view-${tab.dataset.view}`;
+    }
+
+    viewMenu.classList.remove('is-open');
+    menuToggle.setAttribute('aria-expanded', 'false');
+  });
+}
 
 let allAccounts: Account[] = [];
+let allParties: Party[] = [];
 
 let busy: boolean = true;
 
@@ -62,6 +107,12 @@ function setBusy(value: boolean): void {
   showArchived.disabled = value;
   showHidden.disabled = value;
   resetButton.disabled = value;
+  addPartyButton.disabled = value;
+  refreshPartiesButton.disabled = value;
+  partyNameInput.disabled = value;
+  partyPhoneInput.disabled = value;
+  partyEmailInput.disabled = value;
+  partyAddressInput.disabled = value;
 }
 
 function todayLocal(): string {
@@ -237,6 +288,92 @@ async function refreshAccounts(): Promise<void> {
   renderAccounts();
 }
 
+function removeParty(party: Party): void {
+  void runAction(async (): Promise<void> => {
+    await database.removeParty(party.id);
+    await refreshParties();
+  }, 'Party removed.');
+}
+
+function renderParties(parties: Party[] = allParties): void {
+  partyList.replaceChildren();
+  partyCount.textContent = `${parties.length} parties`;
+
+  if (parties.length === 0) {
+    const empty = document.createElement('li');
+    empty.className = 'empty-state';
+    empty.textContent = 'No parties yet. Add one to get started.';
+    partyList.append(empty);
+    return;
+  }
+
+  for (const party of parties) {
+    const item = document.createElement('li');
+    item.className = 'account-item';
+    const name = document.createElement('span');
+    name.textContent = party.name;
+    const remove = makeActionButton('Remove', (): void => {
+      removeParty(party);
+    });
+    item.append(name, remove);
+    partyList.append(item);
+  }
+}
+
+function resetPartyForm(): void {
+  partyForm.reset();
+}
+
+function partyNameIsAvailable(name: string): boolean {
+  const existingNames: string[] = allParties.map(
+    (party: Party): string => party.name,
+  );
+  const exact: string | undefined = findExactName(existingNames, name);
+  if (exact !== undefined) {
+    setStatus(`A party named "${exact}" already exists.`, 'error');
+    return false;
+  }
+
+  const near: string | undefined = findNearName(existingNames, name);
+  if (near !== undefined) {
+    const message: string = `A party named "${near}" already exists. Create "${name}" anyway?`;
+    if (!window.confirm(message)) {
+      setStatus('Party creation cancelled.');
+      return false;
+    }
+  }
+
+  return true;
+}
+
+partyForm.addEventListener('submit', (event: SubmitEvent): void => {
+  event.preventDefault();
+
+  const name: string = partyNameInput.value.trim();
+  if (!partyNameIsAvailable(name)) return;
+
+  void runAction(async (): Promise<void> => {
+    await database.createParty({
+      name,
+      phone: partyPhoneInput.value,
+      email: partyEmailInput.value,
+      address: partyAddressInput.value,
+    });
+
+    await refreshParties();
+    resetPartyForm();
+  }, 'Party created successfully.');
+});
+
+async function refreshParties(): Promise<void> {
+  allParties = await database.getParties();
+  renderParties();
+}
+
+refreshPartiesButton.addEventListener('click', (): void => {
+  void runAction(refreshParties, 'Parties refreshed successfully.');
+});
+
 showArchived.addEventListener('change', (): void => {
   renderAccounts();
 });
@@ -351,6 +488,7 @@ async function initializeApp(): Promise<void> {
     databaseInfo.textContent = `SQLite ${ready.sqliteVersion} | Schema ${ready.schemaVersion}`;
 
     await refreshAccounts();
+    await refreshParties();
 
     setStatus('Local database connected.', 'success');
     setBusy(false);

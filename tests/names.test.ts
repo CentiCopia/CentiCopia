@@ -4,7 +4,17 @@ import {
   findExactName,
   findNearName,
   nameKey,
+  normalizeName,
 } from '../src/core/names';
+
+describe('normalizeName()', (): void => {
+  it('uses the label in its error message', (): void => {
+    expect(normalizeName('Party', '  Acme  ')).toBe('Acme');
+    expect(() => normalizeName('Party', '   ')).toThrow(
+      'Party name must be 1-100 characters.',
+    );
+  });
+});
 
 describe('nameKey()', (): void => {
   it('trims spaces and ignores case', (): void => {

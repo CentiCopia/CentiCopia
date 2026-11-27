@@ -1,6 +1,16 @@
-import type { DatabaseCommand, DatabaseResponse } from './protocol';
+import type {
+  DatabaseCommand,
+  DatabaseRequest,
+  DatabaseResponse,
+} from './protocol';
 
-import type { Account, CreateAccountInput, UpdateAccountInput } from './types';
+import type {
+  Account,
+  CreateAccountInput,
+  UpdateAccountInput,
+  Party,
+  CreatePartyInput,
+} from './types';
 
 type Result = Extract<DatabaseResponse, { id: number }>;
 type Ready = Extract<DatabaseResponse, { type: 'ready' }>;
@@ -78,7 +88,8 @@ export class DatabaseClient {
     return new Promise<Result>((resolve, reject) => {
       this.pending.set(id, { resolve, reject });
 
-      this.worker.postMessage({ ...request, id });
+      const message: DatabaseRequest = { ...request, id };
+      this.worker.postMessage(message);
     });
   }
 
@@ -125,6 +136,34 @@ export class DatabaseClient {
     const response = await this.send({ type: 'resetData' });
 
     if (response.type !== 'resetCompleted') {
+      throw new Error('Unexpected database response.');
+    }
+  }
+
+  public async getParties(): Promise<Party[]> {
+    const response = await this.send({ type: 'getParties' });
+
+    if (response.type !== 'parties') {
+      throw new Error('Unexpected database response.');
+    }
+
+    return response.parties;
+  }
+
+  public async createParty(input: CreatePartyInput): Promise<Party> {
+    const response = await this.send({ type: 'createParty', input });
+
+    if (response.type !== 'partyCreated') {
+      throw new Error('Unexpected database response.');
+    }
+
+    return response.party;
+  }
+
+  public async removeParty(partyId: string): Promise<void> {
+    const response = await this.send({ type: 'removeParty', partyId });
+
+    if (response.type !== 'partyRemoved') {
       throw new Error('Unexpected database response.');
     }
   }
