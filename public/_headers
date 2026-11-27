@@ -1,0 +1,4 @@
+# Required by SQLite WASM (SharedArrayBuffer / OPFS)
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp

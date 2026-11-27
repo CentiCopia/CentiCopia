@@ -361,4 +361,10 @@ async function initializeApp(): Promise<void> {
   }
 }
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {
+    // Offline support is optional; the app still works online.
+  });
+}
+
 void initializeApp();
