@@ -23,6 +23,21 @@ const accountTypes: ReadonlySet<string> = new Set<AccountSubtype>([
   'other',
 ]);
 
+function subtypeLabel(subtype: string): string {
+  const words: string[] = subtype.split('_');
+  return words.map((word) => word[0].toUpperCase() + word.slice(1)).join(' ');
+}
+
+function navAccountsFor(subtype: string): Account[] {
+  return allAccounts.filter(
+    (account: Account): boolean =>
+      account.subtype === subtype &&
+      !account.isHidden &&
+      !account.isArchived &&
+      !isAdmin(account),
+  );
+}
+
 const form = getElement<HTMLFormElement>('#account-form');
 const nameInput = getElement<HTMLInputElement>('#account-name');
 const typeSelect = getElement<HTMLSelectElement>('#account-type');
@@ -52,6 +67,7 @@ const partyList = getElement<HTMLUListElement>('#party-list');
 const partyCount = getElement<HTMLParagraphElement>('#party-count');
 const menuToggle = getElement<HTMLButtonElement>('#menu-toggle');
 const viewMenu = getElement<HTMLElement>('#view-menu');
+const navAccountGroups = getElement<HTMLElement>('#nav-account-groups');
 
 menuToggle.addEventListener('click', (): void => {
   const open: boolean = menuToggle.getAttribute('aria-expanded') === 'true';
@@ -181,6 +197,27 @@ function isAdmin(account: Account): boolean {
   return !['asset', 'liability'].includes(account.type);
 }
 
+function renderNavAccountGroups(): void {
+  navAccountGroups.replaceChildren();
+
+  for (const subtype of accountTypes) {
+    const matches: Account[] = navAccountsFor(subtype);
+    if (matches.length === 0) continue;
+    const group = document.createElement('details');
+    group.className = 'nav-group';
+    const summary = document.createElement('summary');
+    summary.textContent = subtypeLabel(subtype);
+    group.append(summary);
+    for (const account of matches) {
+      const row = document.createElement('span');
+      row.className = 'nav-account';
+      row.textContent = account.name;
+      group.append(row);
+    }
+    navAccountGroups.append(group);
+  }
+}
+
 function renderAccounts(accounts: Account[] = allAccounts): void {
   const visible: Account[] =
     showHidden.checked && showArchived.checked && showAdmin.checked
@@ -286,6 +323,7 @@ function renderAccounts(accounts: Account[] = allAccounts): void {
 async function refreshAccounts(): Promise<void> {
   allAccounts = await database.getAccounts();
   renderAccounts();
+  renderNavAccountGroups();
 }
 
 function removeParty(party: Party): void {
