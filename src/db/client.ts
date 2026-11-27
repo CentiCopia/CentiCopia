@@ -120,4 +120,12 @@ export class DatabaseClient {
 
     return response.account;
   }
+
+  public async resetData(): Promise<void> {
+    const response = await this.send({ type: 'resetData' });
+
+    if (response.type !== 'resetCompleted') {
+      throw new Error('Unexpected database response.');
+    }
+  }
 }

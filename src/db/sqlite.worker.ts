@@ -61,12 +61,7 @@ async function initializeDatabase(): Promise<void> {
     throw new Error('SQLite OPFS VFS failed to initialize.');
   }
 
-  const resetDatabase: boolean =
-    import.meta.env.DEV && import.meta.env.VITE_RESET_DATABASE === 'true';
-
-  const databasePath: string = resetDatabase
-    ? 'file:/centicopia.sqlite3?delete-before-open=1'
-    : '/centicopia.sqlite3';
+  const databasePath: string = '/centicopia.sqlite3';
 
   const db = new sqlite3.oo1.OpfsDb(databasePath);
 
@@ -218,6 +213,27 @@ async function initializeDatabase(): Promise<void> {
               id: request.id,
               type: 'accountCreated',
               account: mapAccount(row),
+            };
+
+            self.postMessage(response);
+            break;
+          }
+
+          case 'resetData': {
+            db.transaction((): void => {
+              db.exec('DELETE FROM entries');
+              db.exec('DELETE FROM transactions');
+              db.exec('DELETE FROM budget_allocations');
+              db.exec('DELETE FROM goals');
+              db.exec('DELETE FROM categories');
+              db.exec(
+                "DELETE FROM accounts WHERE type IN ('asset', 'liability')",
+              );
+            });
+
+            const response: DatabaseResponse = {
+              id: request.id,
+              type: 'resetCompleted',
             };
 
             self.postMessage(response);

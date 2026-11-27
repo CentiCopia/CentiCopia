@@ -37,13 +37,10 @@ Seeded from the planning board on 2026-11-24.
 ### Finished
 
 - **Name matching** (5 pts) — shared duplicate / near-match checking
-  for Parties, Accounts, and Categories. Core helpers are in place and
-  the account form warns on a near match.
-
-### Pulled in / Ready
-
-- **Reset the app's data** (2 pts) — reset with a strong verification
-  step; backup/export offered but optional.
+  for Parties, Accounts, and Categories. The account form blocks exact
+  duplicates and warns on near matches.
+- **Reset the app's data** (2 pts) — in-app button with typed verification;
+  backup/export offered but optional.
 
 ### Still ahead (blocked, in dependency order)
 

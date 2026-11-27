@@ -2,7 +2,7 @@ import './styles/main.css';
 
 import { netWorth } from './core/ledger';
 import { formatCents, parseCents } from './core/money';
-import { findNearName } from './core/names';
+import { findExactName, findNearName } from './core/names';
 import { DatabaseClient } from './db/client';
 import type { Account, AccountSubtype, UpdateAccountInput } from './db/types';
 
@@ -33,6 +33,7 @@ const accountCount = getElement<HTMLParagraphElement>('#account-count');
 const status = getElement<HTMLParagraphElement>('#status');
 const databaseInfo = getElement<HTMLElement>('#database-info');
 const netWorthText = getElement<HTMLParagraphElement>('#net-worth');
+const resetButton = getElement<HTMLButtonElement>('#reset-button');
 
 let allAccounts: Account[] = [];
 
@@ -60,6 +61,7 @@ function setBusy(value: boolean): void {
   showAdmin.disabled = value;
   showArchived.disabled = value;
   showHidden.disabled = value;
+  resetButton.disabled = value;
 }
 
 function todayLocal(): string {
@@ -275,6 +277,12 @@ form.addEventListener('submit', (event: SubmitEvent): void => {
   const existingNames: string[] = allAccounts.map(
     (account: Account): string => account.name,
   );
+  const exact: string | undefined = findExactName(existingNames, name);
+  if (exact !== undefined) {
+    setStatus(`An account named "${exact}" already exists.`, 'error');
+    return;
+  }
+
   const near: string | undefined = findNearName(existingNames, name);
   if (near !== undefined) {
     const message: string = `An account named "${near}" already exists. Create "${name}" anyway?`;
@@ -316,6 +324,22 @@ form.addEventListener('submit', (event: SubmitEvent): void => {
 
 refreshButton.addEventListener('click', (): void => {
   void runAction(refreshAccounts, 'Accounts refreshed successfully.');
+});
+
+resetButton.addEventListener('click', (): void => {
+  const phrase: string | null = window.prompt(
+    'Type DELETE MY DATA to erase all accounts and transactions. Backups are not created automatically.',
+  );
+
+  if (phrase !== 'DELETE MY DATA') {
+    setStatus('Reset cancelled; no data was changed.');
+    return;
+  }
+
+  void runAction(async (): Promise<void> => {
+    await database.resetData();
+    await refreshAccounts();
+  }, 'All data was reset.');
 });
 
 async function initializeApp(): Promise<void> {

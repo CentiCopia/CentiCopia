@@ -9,7 +9,8 @@ export type DatabaseCommand =
   | {
       type: 'updateAccount';
       input: UpdateAccountInput;
-    };
+    }
+  | { type: 'resetData' };
 
 export type DatabaseRequest = DatabaseCommand & { id: number };
 
@@ -42,4 +43,8 @@ export type DatabaseResponse =
       type: 'accountUpdated';
       id: number;
       account: Account;
+    }
+  | {
+      type: 'resetCompleted';
+      id: number;
     };

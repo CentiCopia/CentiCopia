@@ -28,13 +28,6 @@ output=terminal
 pos=TAB
 save=1
 
-[reset]
-command=reset.bat
-cwd=$(VIM_ROOT)
-output=terminal
-pos=bottom
-save=1
-
 [typecheck]
 command=npm run typecheck
 cwd=$(VIM_ROOT)
