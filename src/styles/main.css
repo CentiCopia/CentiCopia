@@ -293,6 +293,19 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .account-item {
+    flex-wrap: wrap;
+  }
+
+  .account-balance {
+    margin-left: 0;
+  }
+
+  .account-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+
   .app-header,
   .app-footer {
     flex-wrap: wrap;
