@@ -7,7 +7,9 @@ function precacheAssets(): Plugin {
     name: 'precache-assets',
     apply: 'build',
     writeBundle(options, bundle) {
-      const urls = Object.keys(bundle).map((file) => `/${file}`);
+      const urls = Object.keys(bundle)
+        .filter((file) => file !== 'index.html')
+        .map((file) => `/${file}`);
       const swPath = path.join(options.dir ?? 'dist', 'sw.js');
       const source = fs.readFileSync(swPath, 'utf8');
       fs.writeFileSync(

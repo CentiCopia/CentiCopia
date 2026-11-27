@@ -1,8 +1,7 @@
-const CACHE_NAME = 'centicopia-v2';
+const CACHE_NAME = 'centicopia-v3';
 const BUILT_ASSETS = []; // replaced at build
 const APP_SHELL = [
   '/',
-  '/index.html',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -37,17 +36,19 @@ self.addEventListener('fetch', (event) => {
   if (new URL(request.url).origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(() => caches.match('/index.html')));
+    event.respondWith(fetch(request).catch(() => caches.match('/')));
     return;
   }
 
   event.respondWith(
     caches.match(request).then((cached) => {
-      if (cached) return cached;
+      if (cached && !cached.redirected) return cached;
       return fetch(request).then((response) => {
-        caches
-          .open(CACHE_NAME)
-          .then((cache) => cache.put(request, response.clone()));
+        if (!response.redirected) {
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(request, response.clone()));
+        }
         return response;
       });
     }),
