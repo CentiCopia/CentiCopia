@@ -41,6 +41,10 @@ Seeded from the planning board on 2026-11-24.
   duplicates and warns on near matches.
 - **Reset the app's data** (2 pts) — in-app button with typed verification;
   backup/export offered but optional.
+- **Offline use** (8 pts) — installable PWA with a hand-written service
+  worker and build-time precache; verified on iPhone Safari 17+ from
+  `https://centicopia.pages.dev/`, including offline reload. Storage
+  uses SQLite's OPFS SAHPool VFS, so it does not depend on COOP/COEP.
 
 ### Still ahead (blocked, in dependency order)
 
@@ -50,8 +54,8 @@ Seeded from the planning board on 2026-11-24.
   storage ✅, and Parties.
 - **Categories** (8 pts), **Transfer between accounts** (5 pts),
   **Filter system** (8 pts), **Regular giving subtracted from
-  tithe** (3 pts), **Offline use** (8 pts), **Export / save / sync
-  data** (5 pts), **Optional extra data protection** (5 pts).
+  tithe** (3 pts), **Export / save / sync data** (5 pts),
+  **Optional extra data protection** (5 pts).
 
 ### Retro
 
