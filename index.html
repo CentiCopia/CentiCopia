@@ -126,6 +126,11 @@
       <div id="view-parties" class="dashboard" hidden>
         <section class="panel" aria-labelledby="add-party-title">
           <h2 id="add-party-title">Add Party</h2>
+          <p class="panel-description">
+            A party is a person or organization money comes from or goes to — an
+            employer, a shop, or a family member. Add one with just a name; you
+            can add contact details later.
+          </p>
           <form id="party-form">
             <label for="party-name">Party Name</label>
             <input
@@ -135,14 +140,46 @@
               maxlength="100"
               required
             />
-            <label for="party-phone">Phone (optional)</label>
-            <input id="party-phone" name="phone" type="tel" />
-            <label for="party-email">Email (optional)</label>
-            <input id="party-email" name="email" type="email" />
-            <label for="party-address">Address (optional)</label>
-            <input id="party-address" name="address" type="text" />
             <button id="add-party-button" type="submit" disabled>
               Add Party
+            </button>
+          </form>
+        </section>
+
+        <section
+          class="panel"
+          id="party-editor-panel"
+          aria-labelledby="party-editor-title"
+          hidden
+        >
+          <div class="section-heading">
+            <h2 id="party-editor-title">Edit Party</h2>
+            <button
+              id="cancel-party-edit"
+              type="button"
+              class="secondary-button"
+            >
+              Cancel
+            </button>
+          </div>
+          <p id="party-editor-name" class="panel-description"></p>
+          <form id="party-edit-form">
+            <label for="edit-party-name">Party Name</label>
+            <input
+              id="edit-party-name"
+              name="name"
+              type="text"
+              maxlength="100"
+              required
+            />
+            <label for="edit-party-phone">Phone (optional)</label>
+            <input id="edit-party-phone" name="phone" type="tel" />
+            <label for="edit-party-email">Email (optional)</label>
+            <input id="edit-party-email" name="email" type="email" />
+            <label for="edit-party-address">Address (optional)</label>
+            <input id="edit-party-address" name="address" type="text" />
+            <button id="save-party-button" type="submit" disabled>
+              Save Party
             </button>
           </form>
         </section>

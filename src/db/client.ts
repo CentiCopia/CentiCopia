@@ -10,6 +10,7 @@ import type {
   UpdateAccountInput,
   Party,
   CreatePartyInput,
+  UpdatePartyInput,
 } from './types';
 
 type Result = Extract<DatabaseResponse, { id: number }>;
@@ -154,6 +155,23 @@ export class DatabaseClient {
     const response = await this.send({ type: 'createParty', input });
 
     if (response.type !== 'partyCreated') {
+      throw new Error('Unexpected database response.');
+    }
+
+    return response.party;
+  }
+
+  public async updateParty(
+    partyId: string,
+    input: UpdatePartyInput,
+  ): Promise<Party> {
+    const response = await this.send({
+      type: 'updateParty',
+      partyId,
+      input,
+    });
+
+    if (response.type !== 'partyUpdated') {
       throw new Error('Unexpected database response.');
     }
 

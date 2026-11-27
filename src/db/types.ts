@@ -51,3 +51,10 @@ export interface CreatePartyInput {
   email?: string | null;
   address?: string | null;
 }
+
+export interface UpdatePartyInput {
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+}

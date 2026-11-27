@@ -56,15 +56,24 @@ const netWorthText = getElement<HTMLParagraphElement>('#net-worth');
 const resetButton = getElement<HTMLButtonElement>('#reset-button');
 const partyForm = getElement<HTMLFormElement>('#party-form');
 const partyNameInput = getElement<HTMLInputElement>('#party-name');
-const partyPhoneInput = getElement<HTMLInputElement>('#party-phone');
-const partyEmailInput = getElement<HTMLInputElement>('#party-email');
-const partyAddressInput = getElement<HTMLInputElement>('#party-address');
 const addPartyButton = getElement<HTMLButtonElement>('#add-party-button');
 const refreshPartiesButton = getElement<HTMLButtonElement>(
   '#refresh-parties-button',
 );
 const partyList = getElement<HTMLUListElement>('#party-list');
 const partyCount = getElement<HTMLParagraphElement>('#party-count');
+const partyEditorPanel = getElement<HTMLElement>('#party-editor-panel');
+const partyEditorName = getElement<HTMLParagraphElement>('#party-editor-name');
+const partyEditForm = getElement<HTMLFormElement>('#party-edit-form');
+const editPartyNameInput = getElement<HTMLInputElement>('#edit-party-name');
+const editPartyPhoneInput = getElement<HTMLInputElement>('#edit-party-phone');
+const editPartyEmailInput = getElement<HTMLInputElement>('#edit-party-email');
+const editPartyAddressInput = getElement<HTMLInputElement>(
+  '#edit-party-address',
+);
+const savePartyButton = getElement<HTMLButtonElement>('#save-party-button');
+const cancelPartyEditButton =
+  getElement<HTMLButtonElement>('#cancel-party-edit');
 const menuToggle = getElement<HTMLButtonElement>('#menu-toggle');
 const viewMenu = getElement<HTMLElement>('#view-menu');
 const navAccountGroups = getElement<HTMLElement>('#nav-account-groups');
@@ -97,6 +106,7 @@ for (const tab of viewTabs) {
 
 let allAccounts: Account[] = [];
 let allParties: Party[] = [];
+let editingPartyId: string | null = null;
 
 let busy: boolean = true;
 
@@ -126,9 +136,12 @@ function setBusy(value: boolean): void {
   addPartyButton.disabled = value;
   refreshPartiesButton.disabled = value;
   partyNameInput.disabled = value;
-  partyPhoneInput.disabled = value;
-  partyEmailInput.disabled = value;
-  partyAddressInput.disabled = value;
+  editPartyNameInput.disabled = value;
+  editPartyPhoneInput.disabled = value;
+  editPartyEmailInput.disabled = value;
+  editPartyAddressInput.disabled = value;
+  savePartyButton.disabled = value;
+  cancelPartyEditButton.disabled = value;
 }
 
 function todayLocal(): string {
@@ -326,9 +339,30 @@ async function refreshAccounts(): Promise<void> {
   renderNavAccountGroups();
 }
 
+function openPartyEditor(party: Party): void {
+  editingPartyId = party.id;
+  partyEditorName.textContent = `Editing ${party.name}`;
+  editPartyNameInput.value = party.name;
+  editPartyPhoneInput.value = party.phone ?? '';
+  editPartyEmailInput.value = party.email ?? '';
+  editPartyAddressInput.value = party.address ?? '';
+  partyEditorPanel.hidden = false;
+}
+
+function closePartyEditor(): void {
+  editingPartyId = null;
+  partyEditorPanel.hidden = true;
+  partyEditForm.reset();
+}
+
+cancelPartyEditButton.addEventListener('click', (): void => {
+  closePartyEditor();
+});
+
 function removeParty(party: Party): void {
   void runAction(async (): Promise<void> => {
     await database.removeParty(party.id);
+    if (editingPartyId === party.id) closePartyEditor();
     await refreshParties();
   }, 'Party removed.');
 }
@@ -350,10 +384,13 @@ function renderParties(parties: Party[] = allParties): void {
     item.className = 'account-item';
     const name = document.createElement('span');
     name.textContent = party.name;
+    const edit = makeActionButton('Edit', (): void => {
+      openPartyEditor(party);
+    });
     const remove = makeActionButton('Remove', (): void => {
       removeParty(party);
     });
-    item.append(name, remove);
+    item.append(name, edit, remove);
     partyList.append(item);
   }
 }
@@ -362,10 +399,10 @@ function resetPartyForm(): void {
   partyForm.reset();
 }
 
-function partyNameIsAvailable(name: string): boolean {
-  const existingNames: string[] = allParties.map(
-    (party: Party): string => party.name,
-  );
+function partyNameIsAvailable(name: string, exceptId?: string): boolean {
+  const existingNames: string[] = allParties
+    .filter((party: Party): boolean => party.id !== exceptId)
+    .map((party: Party): string => party.name);
   const exact: string | undefined = findExactName(existingNames, name);
   if (exact !== undefined) {
     setStatus(`A party named "${exact}" already exists.`, 'error');
@@ -374,9 +411,9 @@ function partyNameIsAvailable(name: string): boolean {
 
   const near: string | undefined = findNearName(existingNames, name);
   if (near !== undefined) {
-    const message: string = `A party named "${near}" already exists. Create "${name}" anyway?`;
+    const message: string = `A party named "${near}" already exists. Use "${name}" anyway?`;
     if (!window.confirm(message)) {
-      setStatus('Party creation cancelled.');
+      setStatus('Party changes cancelled.');
       return false;
     }
   }
@@ -391,16 +428,32 @@ partyForm.addEventListener('submit', (event: SubmitEvent): void => {
   if (!partyNameIsAvailable(name)) return;
 
   void runAction(async (): Promise<void> => {
-    await database.createParty({
-      name,
-      phone: partyPhoneInput.value,
-      email: partyEmailInput.value,
-      address: partyAddressInput.value,
-    });
+    await database.createParty({ name });
 
     await refreshParties();
     resetPartyForm();
   }, 'Party created successfully.');
+});
+
+partyEditForm.addEventListener('submit', (event: SubmitEvent): void => {
+  event.preventDefault();
+  const partyId: string | null = editingPartyId;
+  if (partyId === null) return;
+
+  const name: string = editPartyNameInput.value.trim();
+  if (!partyNameIsAvailable(name, partyId)) return;
+
+  void runAction(async (): Promise<void> => {
+    await database.updateParty(partyId, {
+      name,
+      phone: editPartyPhoneInput.value,
+      email: editPartyEmailInput.value,
+      address: editPartyAddressInput.value,
+    });
+
+    await refreshParties();
+    closePartyEditor();
+  }, 'Party updated successfully.');
 });
 
 async function refreshParties(): Promise<void> {

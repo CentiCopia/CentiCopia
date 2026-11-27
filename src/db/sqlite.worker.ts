@@ -272,6 +272,27 @@ async function initializeDatabase(): Promise<void> {
             break;
           }
 
+          case 'updateParty': {
+            const name: string = normalizeName('Party', request.input.name);
+            const phone: string | null = request.input.phone?.trim() || null;
+            const email: string | null = request.input.email?.trim() || null;
+            const address: string | null =
+              request.input.address?.trim() || null;
+
+            const row: unknown = db.selectObject(
+              'UPDATE parties SET name = ?, phone = ?, email = ?, address = ? WHERE id = ? RETURNING id, name, phone, email, address, created_at',
+              [name, phone, email, address, request.partyId],
+            );
+            if (!isPartyRow(row)) throw new Error('Party update failed.');
+
+            self.postMessage({
+              id: request.id,
+              type: 'partyUpdated',
+              party: mapParty(row),
+            } satisfies DatabaseResponse);
+            break;
+          }
+
           case 'resetData': {
             db.transaction((): void => {
               db.exec('DELETE FROM entries');

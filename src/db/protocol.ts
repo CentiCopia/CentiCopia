@@ -4,6 +4,7 @@ import type {
   UpdateAccountInput,
   Party,
   CreatePartyInput,
+  UpdatePartyInput,
 } from './types';
 
 export type DatabaseCommand =
@@ -22,7 +23,12 @@ export type DatabaseCommand =
       type: 'createParty';
       input: CreatePartyInput;
     }
-  | { type: 'removeParty'; partyId: string };
+  | { type: 'removeParty'; partyId: string }
+  | {
+      type: 'updateParty';
+      partyId: string;
+      input: UpdatePartyInput;
+    };
 
 export type DatabaseRequest = DatabaseCommand & { id: number };
 
@@ -73,4 +79,9 @@ export type DatabaseResponse =
   | {
       type: 'partyRemoved';
       id: number;
+    }
+  | {
+      type: 'partyUpdated';
+      id: number;
+      party: Party;
     };
